@@ -1,0 +1,69 @@
+import { captureSnapshot } from "./snapshot.js";
+import { compareSnapshots } from "./compare.js";
+import type { DeployProofConfig, ProofResult, RouteInput, RouteResult } from "./types.js";
+
+type ResolvedConfig = Required<Omit<DeployProofConfig, "preview" | "production">> & {
+  preview: string;
+  production: string;
+};
+
+function errorMessage(value: unknown): string {
+  return value instanceof Error ? value.message : String(value);
+}
+
+export async function prove(config: ResolvedConfig): Promise<ProofResult> {
+  const requestOptions = {
+    timeoutMs: config.timeoutMs,
+    maxRedirects: config.maxRedirects,
+    maxBodyBytes: config.maxBodyBytes,
+    ignoreHeaders: config.ignoreHeaders,
+  };
+
+  const routes: RouteResult[] = [];
+  for (const routeValue of config.routes) {
+    const route = routeValue as RouteInput;
+    const [preview, production] = await Promise.allSettled([
+      captureSnapshot(config.preview, route, requestOptions),
+      captureSnapshot(config.production, route, requestOptions),
+    ]);
+    if (preview.status === "rejected" || production.status === "rejected") {
+      const failure = [
+        preview.status === "rejected" ? `preview: ${errorMessage(preview.reason)}` : undefined,
+        production.status === "rejected" ? `production: ${errorMessage(production.reason)}` : undefined,
+      ].filter(Boolean).join("; ");
+      routes.push({
+        route,
+        differences: [{
+          id: "DP000",
+          severity: "error",
+          route: route.path,
+          field: "request",
+          message: failure,
+        }],
+        error: failure,
+      });
+      continue;
+    }
+    routes.push({
+      route,
+      preview: preview.value,
+      production: production.value,
+      differences: compareSnapshots(route, preview.value, production.value),
+    });
+  }
+
+  const all = routes.flatMap((route) => route.differences);
+  return {
+    previewBase: config.preview,
+    productionBase: config.production,
+    generatedAt: new Date().toISOString(),
+    routes,
+    summary: {
+      errors: all.filter((item) => item.severity === "error").length,
+      warnings: all.filter((item) => item.severity === "warning").length,
+      notices: all.filter((item) => item.severity === "notice").length,
+      matching: routes.filter((route) => route.differences.length === 0).length,
+    },
+  };
+}
+

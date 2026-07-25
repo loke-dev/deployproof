@@ -1,0 +1,61 @@
+{
+  "name": "deployproof",
+  "version": "0.1.0",
+  "description": "Prove a preview behaves like production before you deploy.",
+  "type": "module",
+  "bin": {
+    "deployproof": "dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsup src/cli.ts --format esm --clean --dts",
+    "check": "tsc --noEmit && vitest run && tsup src/cli.ts --format esm --clean --dts && vite build --config site/vite.config.ts",
+    "dev": "tsx src/cli.ts",
+    "site:dev": "vite --config site/vite.config.ts",
+    "site:build": "vite build --config site/vite.config.ts",
+    "deploy": "vite build --config site/vite.config.ts && wrangler deploy",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "prepare": "tsup src/cli.ts --format esm --clean --dts"
+  },
+  "keywords": [
+    "deployment",
+    "preview",
+    "production",
+    "smoke-test",
+    "headers",
+    "redirects",
+    "github-actions",
+    "ci"
+  ],
+  "author": "Loke",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/loke-dev/deployproof.git"
+  },
+  "homepage": "https://deployproof.loke.dev",
+  "bugs": {
+    "url": "https://github.com/loke-dev/deployproof/issues"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "picocolors": "^1.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "tsup": "^8.5.0",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.0",
+    "vite": "^7.0.0",
+    "vitest": "^3.2.0",
+    "wrangler": "4.113.0"
+  },
+  "packageManager": "pnpm@11.17.0"
+}

@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#201637" />
+    <meta name="description" content="DeployProof compares a preview deployment with production before you merge." />
+    <meta property="og:title" content="DeployProof · Preview is not proof" />
+    <meta property="og:description" content="Catch status, redirect, header, cookie, and metadata drift before production." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://deployproof.loke.dev" />
+    <meta name="twitter:card" content="summary" />
+    <link rel="icon" href="./favicon.svg" />
+    <link rel="canonical" href="https://deployproof.loke.dev" />
+    <title>DeployProof · Compare preview behavior with production</title>
+  </head>
+  <body>
+    <a class="skip-link" href="#content">Skip to content</a>
+    <header class="nav wrap">
+      <a class="brand" href="/" aria-label="DeployProof home">
+        <span class="brand-mark">D<span>✓</span></span>
+        <span>DEPLOYPROOF</span>
+      </a>
+      <nav aria-label="Primary">
+        <a href="#compare">Compare</a>
+        <a href="#ci">CI</a>
+        <a class="nav-source" href="https://github.com/loke-dev/deployproof">GitHub ↗</a>
+      </nav>
+    </header>
+
+    <main id="content">
+      <section class="hero wrap">
+        <div class="hero-copy" data-reveal>
+          <p class="eyebrow"><span>PRE-MERGE</span> BEHAVIORAL DIFF</p>
+          <h1>Preview is a URL.<br /><em>Proof is a comparison.</em></h1>
+          <p class="lede">Send the same request to preview and production. Catch the status, redirect, header, cookie, and metadata drift that a green build cannot see.</p>
+          <div class="actions">
+            <button class="install-command" data-copy="npx deployproof">
+              <span class="prompt">›</span>
+              <code>npx deployproof</code>
+              <span data-copy-label>COPY</span>
+            </button>
+            <a class="text-link" href="https://github.com/loke-dev/deployproof#github-action">Add to a workflow ↗</a>
+          </div>
+          <div class="trust">
+            <span>NO CREDENTIALS</span>
+            <span>READ-ONLY</span>
+            <span>BODY-SAFE</span>
+          </div>
+        </div>
+
+        <div class="proof-card" data-reveal aria-label="Example DeployProof comparison">
+          <div class="card-top">
+            <span>DEPLOYMENT / #481</span>
+            <span class="checking"><i></i> COMPARED</span>
+          </div>
+          <div class="target">
+            <span class="target-label">PREVIEW</span>
+            <strong>feature-auth.pages.dev</strong>
+          </div>
+          <div class="versus"><span></span><b>VS</b><span></span></div>
+          <div class="target">
+            <span class="target-label">PRODUCTION</span>
+            <strong>example.com</strong>
+          </div>
+          <div class="route-result good">
+            <span>✓</span><code>/</code><b>matches</b>
+          </div>
+          <div class="route-result warning">
+            <span>!</span><code>/login</code><b>1 warning</b>
+          </div>
+          <div class="diff-line">
+            <span>DP005</span>
+            <p><b>cookie attributes</b><br />preview is missing <code>secure</code></p>
+          </div>
+          <div class="stamp">MERGE BLOCKED</div>
+        </div>
+      </section>
+
+      <section class="problem">
+        <div class="wrap problem-grid" data-reveal>
+          <p class="section-no">01 / THE GAP</p>
+          <div>
+            <h2>A screenshot can look right while the deployment behaves wrong.</h2>
+            <p>Preview hosts, platform defaults, and environment rules change behavior outside your application bundle. DeployProof treats production as the contract and shows the difference.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="compare wrap" id="compare">
+        <div class="section-heading" data-reveal>
+          <p class="section-no">02 / COMPARISON</p>
+          <h2>The response surface that matters.</h2>
+        </div>
+        <div class="signal-grid">
+          <article data-reveal>
+            <span class="signal-icon">301</span>
+            <h3>Routing</h3>
+            <p>Status, redirect chain, final path, and explicit route expectations.</p>
+          </article>
+          <article data-reveal>
+            <span class="signal-icon">H</span>
+            <h3>Headers</h3>
+            <p>Cache behavior, content type, CSP, HSTS, frame policy, and CORS-adjacent controls.</p>
+          </article>
+          <article data-reveal>
+            <span class="signal-icon">C</span>
+            <h3>Cookies</h3>
+            <p>Names and security attributes are compared. Values never enter a report.</p>
+          </article>
+          <article data-reveal>
+            <span class="signal-icon">⌁</span>
+            <h3>Metadata</h3>
+            <p>Canonical URLs, robots directives, and titles reveal subtle release drift.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="terminal-section" id="ci">
+        <div class="wrap terminal-grid">
+          <div data-reveal>
+            <p class="section-no">03 / CI CONTRACT</p>
+            <h2>Readable locally.<br />Native in automation.</h2>
+            <p>Human output for the terminal, JSON for tooling, GitHub annotations for pull requests, and SARIF for code scanning.</p>
+            <div class="formats"><span>HUMAN</span><span>JSON</span><span>GITHUB</span><span>SARIF</span></div>
+          </div>
+          <div class="terminal" data-reveal>
+            <div class="terminal-bar"><i></i><i></i><i></i><span>deployproof</span></div>
+            <pre><span class="muted">$</span> deployproof --strict
+
+<b>/</b> <span class="ok">✓ matches production</span>
+<b>/docs</b> <span class="ok">✓ matches production</span>
+<b>/login</b>
+  <span class="warn">! DP005</span> cookie attributes differ
+    preview     [httponly, samesite]
+    production  [httponly, samesite, secure]
+
+<span class="summary">2 matching · 0 errors · 1 warning</span></pre>
+          </div>
+        </div>
+      </section>
+
+      <section class="boundary wrap" data-reveal>
+        <div class="boundary-label">SAFETY BOUNDARY</div>
+        <div class="boundary-copy">
+          <h2>Inspect behavior.<br />Keep the payload private.</h2>
+          <p>Requests are timed out. Redirects are capped. Readable bodies are size-limited and only parsed for public HTML metadata. No body or cookie value is printed or stored.</p>
+        </div>
+        <div class="boundary-metrics">
+          <div><strong>10s</strong><span>default timeout</span></div>
+          <div><strong>5</strong><span>redirect limit</span></div>
+          <div><strong>500KB</strong><span>body ceiling</span></div>
+        </div>
+      </section>
+
+      <section class="cta">
+        <div class="wrap" data-reveal>
+          <p class="section-no">OPEN SOURCE · MIT</p>
+          <h2>Do not hope the preview is equivalent.</h2>
+          <p>Prove it against the deployment your users already trust.</p>
+          <button class="install-command light" data-copy="npx deployproof">
+            <span class="prompt">›</span>
+            <code>npx deployproof</code>
+            <span data-copy-label>COPY</span>
+          </button>
+        </div>
+      </section>
+    </main>
+
+    <footer class="wrap">
+      <a class="brand" href="/"><span class="brand-mark">D<span>✓</span></span><span>DEPLOYPROOF</span></a>
+      <p>Built by <a href="https://loke.dev">Loke</a>. MIT licensed.</p>
+      <a href="https://github.com/loke-dev/deployproof">Source ↗</a>
+    </footer>
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>
+

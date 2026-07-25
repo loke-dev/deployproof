@@ -1,0 +1,31 @@
+name: DeployProof
+description: Prove a preview deployment behaves like production
+author: Loke
+branding:
+  icon: check-circle
+  color: purple
+inputs:
+  preview:
+    description: Preview deployment base URL
+    required: true
+  production:
+    description: Production base URL
+    required: true
+  config:
+    description: Path to a DeployProof config file
+    required: false
+    default: deployproof.config.json
+  strict:
+    description: Fail when warnings are found
+    required: false
+    default: "true"
+runs:
+  using: composite
+  steps:
+    - name: Compare preview with production
+      shell: bash
+      env:
+        DEPLOYPROOF_PREVIEW: ${{ inputs.preview }}
+        DEPLOYPROOF_PRODUCTION: ${{ inputs.production }}
+      run: npx --yes deployproof@0.1.0 --config "${{ inputs.config }}" --format github ${{ inputs.strict == 'true' && '--strict' || '--no-strict' }}
+
