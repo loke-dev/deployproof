@@ -364,14 +364,25 @@ function cookieShapes(headers) {
     return { name, attributes };
   }).filter((value2) => value2 !== void 0).sort((a, b) => a.name.localeCompare(b.name) || a.attributes.join("\0").localeCompare(b.attributes.join("\0")));
 }
-function extractMetadata(body) {
+function safeCanonical(value2, responseUrl) {
+  try {
+    const canonical = new URL(value2, responseUrl);
+    if (!["http:", "https:"].includes(canonical.protocol)) {
+      return "[unsupported canonical URL]";
+    }
+    return /^(?:[a-z][a-z\d+.-]*:|\/\/)/i.test(value2) ? safeAbsoluteUrl(canonical) : safePath(canonical);
+  } catch {
+    return "[invalid canonical URL]";
+  }
+}
+function extractMetadata(body, responseUrl) {
   const content = (pattern) => body.match(pattern)?.[1]?.trim();
   const title = content(/<title[^>]*>([\s\S]*?)<\/title>/i);
   const canonical = content(/<link[^>]+rel=["'][^"']*canonical[^"']*["'][^>]+href=["']([^"']+)["'][^>]*>/i) ?? content(/<link[^>]+href=["']([^"']+)["'][^>]+rel=["'][^"']*canonical[^"']*["'][^>]*>/i);
   const robots = content(/<meta[^>]+name=["']robots["'][^>]+content=["']([^"']+)["'][^>]*>/i) ?? content(/<meta[^>]+content=["']([^"']+)["'][^>]+name=["']robots["'][^>]*>/i);
   return {
     ...title ? { title } : {},
-    ...canonical ? { canonical } : {},
+    ...canonical ? { canonical: safeCanonical(canonical, responseUrl) } : {},
     ...robots ? { robots } : {}
   };
 }
@@ -465,7 +476,7 @@ async function captureSnapshot(base, route, options) {
       redirects,
       headers: selectedHeaders(response.headers, options.ignoreHeaders),
       cookies: cookieShapes(response.headers),
-      metadata: /html/i.test(contentType) ? extractMetadata(content.body) : {},
+      metadata: /html/i.test(contentType) ? extractMetadata(content.body, current) : {},
       bytesRead: content.bytes,
       truncated: content.truncated
     };

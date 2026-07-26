@@ -16,7 +16,7 @@ describe("captureSnapshot", () => {
     headers.append("set-cookie", "session=top-secret; Secure; HttpOnly; SameSite=Lax");
     headers.append("set-cookie", "unsafe=another-secret; SameSite=private-mode");
     vi.stubGlobal("fetch", vi.fn(async () => new Response(
-      "<title>Preview</title><link rel=\"canonical\" href=\"https://example.com/\">",
+      "<title>Preview</title><link rel=\"canonical\" href=\"https://example.com/?token=top-secret\">",
       { status: 200, headers },
     )));
 
@@ -28,6 +28,9 @@ describe("captureSnapshot", () => {
     });
 
     expect(result.metadata.title).toBe("Preview");
+    expect(result.metadata.canonical).toBe(
+      safeAbsoluteUrl(new URL("https://example.com/?token=top-secret")),
+    );
     expect(result.headers).toMatchObject({
       "access-control-allow-headers": "Authorization, Content-Type",
       "access-control-expose-headers": "ETag",
@@ -61,6 +64,25 @@ describe("captureSnapshot", () => {
     expect(result.finalUrl).toBe(
       safeAbsoluteUrl(new URL("https://preview.test/new?from=old")),
     );
+  });
+
+  it("preserves relative canonical URLs while fingerprinting query values", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(
+      "<link rel=\"canonical\" href=\"/docs?draft=top-secret\">",
+      { status: 200, headers: { "content-type": "text/html" } },
+    )));
+
+    const result = await captureSnapshot("https://preview.test", { path: "/docs" }, {
+      timeoutMs: 1000,
+      maxRedirects: 3,
+      maxBodyBytes: 1000,
+      ignoreHeaders: [],
+    });
+
+    expect(result.metadata.canonical).toBe(
+      safePath(new URL("https://preview.test/docs?draft=top-secret")),
+    );
+    expect(JSON.stringify(result)).not.toContain("top-secret");
   });
 
   it("does not follow non-redirect 3xx responses with Location headers", async () => {
