@@ -63,6 +63,34 @@ describe("captureSnapshot", () => {
     );
   });
 
+  it("preserves the base URL path when resolving routes", async () => {
+    const fetch = vi.fn(async () => new Response("", {
+      status: 200,
+      headers: { "content-type": "text/plain" },
+    }));
+    vi.stubGlobal("fetch", fetch);
+
+    const result = await captureSnapshot(
+      "https://preview.test/deployments/123",
+      { path: "/health?token=top-secret" },
+      {
+        timeoutMs: 1000,
+        maxRedirects: 3,
+        maxBodyBytes: 1000,
+        ignoreHeaders: [],
+      },
+    );
+
+    expect(fetch).toHaveBeenCalledWith(
+      "https://preview.test/deployments/123/health?token=top-secret",
+      expect.any(Object),
+    );
+    expect(result.requestedUrl).toBe(
+      safeAbsoluteUrl(new URL("https://preview.test/deployments/123/health?token=top-secret")),
+    );
+    expect(result.requestedUrl).not.toContain("top-secret");
+  });
+
   it("keeps the origin and drops custom headers for cross-origin redirects", async () => {
     const fetch = vi.fn()
       .mockResolvedValueOnce(new Response(null, {

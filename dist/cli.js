@@ -407,7 +407,7 @@ async function readBounded(response, maxBytes) {
   return { body, bytes, truncated };
 }
 async function captureSnapshot(base, route, options) {
-  const requested = new URL(route.path, `${base}/`).toString();
+  const requested = new URL(route.path.replace(/^\/+/, ""), `${base}/`).toString();
   const requestedOrigin = new URL(requested).origin;
   let current = requested;
   let includeCustomHeaders = true;

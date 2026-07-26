@@ -114,7 +114,7 @@ export async function captureSnapshot(
   route: RouteInput,
   options: { timeoutMs: number; maxRedirects: number; maxBodyBytes: number; ignoreHeaders: string[] },
 ): Promise<Snapshot> {
-  const requested = new URL(route.path, `${base}/`).toString();
+  const requested = new URL(route.path.replace(/^\/+/, ""), `${base}/`).toString();
   const requestedOrigin = new URL(requested).origin;
   let current = requested;
   let includeCustomHeaders = true;

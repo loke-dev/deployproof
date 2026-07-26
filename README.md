@@ -65,6 +65,10 @@ DEPLOYPROOF_PREVIEW="$PREVIEW_URL" npx deployproof --strict
 The CLI also reads `DEPLOYPROOF_PRODUCTION`, so URLs never have to live in the
 configuration file.
 
+Path prefixes in preview and production URLs are preserved. For example, a
+route of `/api/health` under `https://preview.example.com/deployments/123`
+requests `/deployments/123/api/health`.
+
 ## GitHub Action
 
 ```yaml
