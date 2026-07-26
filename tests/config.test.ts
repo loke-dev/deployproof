@@ -46,4 +46,23 @@ describe("loadConfig", () => {
       await rm(directory, { recursive: true });
     }
   });
+
+  it("keeps only supported route fields", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "deployproof-config-"));
+    const config = join(directory, "deployproof.config.json");
+    try {
+      await writeFile(config, JSON.stringify({
+        preview: "https://preview.example.com",
+        production: "https://example.com",
+        routes: [{ path: "/health", note: "must-not-enter-reports" }],
+      }));
+
+      const loaded = await loadConfig({ ...options, config });
+
+      expect(loaded.routes).toEqual([{ path: "/health", method: "GET" }]);
+      expect(JSON.stringify(loaded)).not.toContain("must-not-enter-reports");
+    } finally {
+      await rm(directory, { recursive: true });
+    }
+  });
 });

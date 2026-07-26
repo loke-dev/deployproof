@@ -144,7 +144,7 @@
         <div class="boundary-label">SAFETY BOUNDARY</div>
         <div class="boundary-copy">
           <h2>Inspect behavior.<br />Keep the payload private.</h2>
-          <p>Requests are timed out. Redirects are capped. Readable bodies are size-limited and only parsed for public HTML metadata. No body or cookie value is printed or stored.</p>
+          <p>Requests are timed out. Redirects are capped. Readable bodies are size-limited and only parsed for public HTML metadata. Bodies, cookie values, custom request headers, and raw query values stay out of reports.</p>
         </div>
         <div class="boundary-metrics">
           <div><strong>10s</strong><span>default timeout</span></div>
@@ -175,4 +175,3 @@
     <script type="module" src="./main.js"></script>
   </body>
 </html>
-

@@ -1,4 +1,5 @@
 import type { Difference, RouteInput, Snapshot } from "./types.js";
+import { safeAbsoluteUrl, safePath, safeRoutePath } from "./url.js";
 
 function stable(value: unknown): string {
   return JSON.stringify(value);
@@ -19,13 +20,12 @@ function difference(
 function comparableFinalTarget(snapshot: Snapshot): string {
   const requested = new URL(snapshot.requestedUrl);
   const final = new URL(snapshot.finalUrl);
-  const path = `${final.pathname}${final.search}`;
-  return final.origin === requested.origin ? path : `${final.origin}${path}`;
+  return final.origin === requested.origin ? safePath(final) : safeAbsoluteUrl(final);
 }
 
 export function compareSnapshots(route: RouteInput, preview: Snapshot, production: Snapshot): Difference[] {
   const differences: Difference[] = [];
-  const path = route.path;
+  const path = safeRoutePath(route.path);
 
   if (preview.status !== production.status) {
     differences.push(difference(path, "DP001", "error", "status", preview.status, production.status, "HTTP status differs"));

@@ -20,31 +20,53 @@ function normalizeBase(value: string, name: string): string {
 }
 
 function normalizeRoute(route: string | RouteInput): RouteInput {
-  const input = typeof route === "string" ? { path: route } : route;
-  if (!input.path) throw new Error("Every route needs a path");
+  const input: unknown = typeof route === "string" ? { path: route } : route;
+  if (!isRecord(input)) throw new Error("Every route must be a path string or object");
+  if (typeof input.path !== "string" || !input.path) throw new Error("Every route needs a path");
   if (input.method !== undefined && input.method !== "GET" && input.method !== "HEAD") {
     throw new Error(`Route ${input.path} has an unsupported method`);
   }
+  let headers: Record<string, string> | undefined;
   if (input.headers !== undefined) {
-    if (!isRecord(input.headers) || Object.values(input.headers).some((value) => typeof value !== "string")) {
-      throw new Error(`Route ${input.path} headers must be string values`);
+    if (!isRecord(input.headers)) {
+      throw new Error(`Route ${input.path} headers must be an object`);
+    }
+    headers = {};
+    for (const [name, value] of Object.entries(input.headers)) {
+      if (typeof value !== "string") {
+        throw new Error(`Route ${input.path} headers must be string values`);
+      }
+      headers[name] = value;
     }
   }
+  let expect: RouteInput["expect"];
   if (input.expect !== undefined) {
     if (!isRecord(input.expect)) throw new Error(`Route ${input.path} expect must be an object`);
-    if (input.expect.status !== undefined && (!Number.isInteger(input.expect.status) || input.expect.status < 100 || input.expect.status > 599)) {
+    const status = input.expect.status;
+    const contentType = input.expect.contentType;
+    if (status !== undefined && (
+      typeof status !== "number"
+      || !Number.isInteger(status)
+      || status < 100
+      || status > 599
+    )) {
       throw new Error(`Route ${input.path} expected status must be between 100 and 599`);
     }
-    if (input.expect.contentType !== undefined && typeof input.expect.contentType !== "string") {
+    if (contentType !== undefined && typeof contentType !== "string") {
       throw new Error(`Route ${input.path} expected content type must be a string`);
     }
+    expect = {
+      ...(status !== undefined ? { status } : {}),
+      ...(contentType !== undefined ? { contentType } : {}),
+    };
   }
   const url = new URL(input.path, "https://deployproof.invalid");
   if (url.origin !== "https://deployproof.invalid") throw new Error(`Route must be relative: ${input.path}`);
   return {
-    ...input,
     path: `${url.pathname}${url.search}`,
     method: input.method ?? "GET",
+    ...(headers ? { headers } : {}),
+    ...(expect ? { expect } : {}),
   };
 }
 

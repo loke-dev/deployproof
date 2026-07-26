@@ -13,6 +13,11 @@ robots directives, and titles.
 It is read-only, does not need credentials, and never prints response bodies,
 cookie values, or custom request-header values.
 
+Custom request headers are sent only to the selected base origin and its
+same-origin redirects. DeployProof drops them if a redirect leaves that origin.
+Query-string values are represented by deterministic fingerprints in reports,
+so differences remain detectable without printing the original values.
+
 ## Quick start
 
 ```bash
@@ -62,7 +67,7 @@ configuration file.
 ## GitHub Action
 
 ```yaml
-- uses: loke-dev/deployproof@master
+- uses: loke-dev/deployproof@v0.1.0
   with:
     preview: ${{ steps.deploy.outputs.deployment-url }}
     production: https://example.com
@@ -71,7 +76,8 @@ configuration file.
 
 The Action emits native annotations for each route difference. It compares
 cookie names and attributes such as `Secure`, `HttpOnly`, and `SameSite`, but
-never exposes cookie values.
+never exposes cookie values. It runs the reviewed CLI bundle from the selected
+repository tag without downloading executable code from npm.
 
 ## Output formats
 

@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { prove } from "../src/prove.js";
+import { safeRoutePath } from "../src/url.js";
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -14,7 +15,7 @@ describe("prove", () => {
       preview: "https://preview.example.com",
       production: "https://example.com",
       routes: [{
-        path: "/",
+        path: "/?token=route-secret",
         method: "GET",
         headers: { authorization: "Bearer super-secret" },
       }],
@@ -25,10 +26,11 @@ describe("prove", () => {
     });
 
     expect(result.routes[0]?.route).toEqual({
-      path: "/",
+      path: safeRoutePath("/?token=route-secret"),
       method: "GET",
       headerNames: ["authorization"],
     });
     expect(JSON.stringify(result)).not.toContain("super-secret");
+    expect(JSON.stringify(result)).not.toContain("route-secret");
   });
 });

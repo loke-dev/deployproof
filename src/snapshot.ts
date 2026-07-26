@@ -1,4 +1,5 @@
 import type { CookieShape, Metadata, RedirectHop, RouteInput, Snapshot } from "./types.js";
+import { safeAbsoluteUrl, safePath } from "./url.js";
 
 const COMPARED_HEADERS = [
   "cache-control",
@@ -101,6 +102,7 @@ export async function captureSnapshot(
   const requested = new URL(route.path, `${base}/`).toString();
   const requestedOrigin = new URL(requested).origin;
   let current = requested;
+  let includeCustomHeaders = true;
   const redirects: RedirectHop[] = [];
   const started = performance.now();
   const controller = new AbortController();
@@ -111,18 +113,37 @@ export async function captureSnapshot(
     for (let hop = 0; hop <= options.maxRedirects; hop += 1) {
       response = await fetch(current, {
         method: route.method ?? "GET",
-        ...(route.headers ? { headers: route.headers } : {}),
+        ...(route.headers && includeCustomHeaders ? { headers: route.headers } : {}),
         redirect: "manual",
         signal: controller.signal,
       });
       const location = response.headers.get("location");
       if (response.status < 300 || response.status >= 400 || !location) break;
-      if (hop === options.maxRedirects) throw new Error(`Exceeded ${options.maxRedirects} redirects`);
-      const target = new URL(location, current);
+      if (hop === options.maxRedirects) {
+        await response.body?.cancel();
+        throw new Error(`Exceeded ${options.maxRedirects} redirects`);
+      }
+      let target: URL;
+      try {
+        target = new URL(location, current);
+      } catch {
+        await response.body?.cancel();
+        throw new Error("Redirect target is not a valid URL");
+      }
+      if (!["http:", "https:"].includes(target.protocol)) {
+        await response.body?.cancel();
+        throw new Error("Redirect target must use http or https");
+      }
+      if (target.username || target.password) {
+        await response.body?.cancel();
+        throw new Error("Redirect target must not include URL credentials");
+      }
+      if (target.origin !== new URL(current).origin) includeCustomHeaders = false;
       const normalizedLocation = target.origin === requestedOrigin
-        ? `${target.pathname}${target.search}`
-        : target.toString();
+        ? safePath(target)
+        : safeAbsoluteUrl(target);
       redirects.push({ status: response.status, location: normalizedLocation });
+      await response.body?.cancel();
       current = target.toString();
     }
     if (!response) throw new Error("No response received");
@@ -131,8 +152,8 @@ export async function captureSnapshot(
     const content = readable ? await readBounded(response, options.maxBodyBytes) : { body: "", bytes: 0, truncated: false };
 
     return {
-      requestedUrl: requested,
-      finalUrl: current,
+      requestedUrl: safeAbsoluteUrl(new URL(requested)),
+      finalUrl: safeAbsoluteUrl(new URL(current)),
       status: response.status,
       durationMs: Math.round(performance.now() - started),
       redirects,

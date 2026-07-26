@@ -8,7 +8,15 @@ import { githubReport, humanReport, sarifReport } from "./report.js";
 
 async function version(): Promise<string> {
   const packageFile = fileURLToPath(new URL("../package.json", import.meta.url));
-  const parsed = JSON.parse(await readFile(packageFile, "utf8")) as { version: string };
+  const parsed: unknown = JSON.parse(await readFile(packageFile, "utf8"));
+  if (
+    typeof parsed !== "object"
+    || parsed === null
+    || !("version" in parsed)
+    || typeof parsed.version !== "string"
+  ) {
+    throw new Error("Package version is missing or invalid.");
+  }
   return parsed.version;
 }
 
@@ -41,4 +49,3 @@ main().catch((error) => {
   if (error instanceof UsageError) console.error("Run deployproof --help for usage.");
   process.exitCode = 2;
 });
-

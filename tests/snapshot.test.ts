@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { captureSnapshot } from "../src/snapshot.js";
+import { safeAbsoluteUrl, safePath } from "../src/url.js";
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -40,11 +41,16 @@ describe("captureSnapshot", () => {
       maxBodyBytes: 1000,
       ignoreHeaders: [],
     });
-    expect(result.redirects).toEqual([{ status: 308, location: "/new?from=old" }]);
-    expect(result.finalUrl).toBe("https://preview.test/new?from=old");
+    expect(result.redirects).toEqual([{
+      status: 308,
+      location: safePath(new URL("https://preview.test/new?from=old")),
+    }]);
+    expect(result.finalUrl).toBe(
+      safeAbsoluteUrl(new URL("https://preview.test/new?from=old")),
+    );
   });
 
-  it("keeps the origin for cross-origin redirects", async () => {
+  it("keeps the origin and drops custom headers for cross-origin redirects", async () => {
     const fetch = vi.fn()
       .mockResolvedValueOnce(new Response(null, {
         status: 302,
@@ -53,7 +59,13 @@ describe("captureSnapshot", () => {
       .mockResolvedValueOnce(new Response("", { status: 200, headers: { "content-type": "text/html" } }));
     vi.stubGlobal("fetch", fetch);
 
-    const result = await captureSnapshot("https://preview.test", { path: "/docs" }, {
+    const result = await captureSnapshot("https://preview.test", {
+      path: "/docs",
+      headers: {
+        authorization: "Bearer top-secret",
+        "x-request-id": "comparison-1",
+      },
+    }, {
       timeoutMs: 1000,
       maxRedirects: 3,
       maxBodyBytes: 1000,
@@ -62,8 +74,36 @@ describe("captureSnapshot", () => {
 
     expect(result.redirects).toEqual([{
       status: 302,
-      location: "https://accounts.example.net/login?next=%2Fdocs",
+      location: safeAbsoluteUrl(
+        new URL("https://accounts.example.net/login?next=%2Fdocs"),
+      ),
     }]);
+    expect(fetch).toHaveBeenNthCalledWith(
+      1,
+      "https://preview.test/docs",
+      expect.objectContaining({
+        headers: expect.objectContaining({ authorization: "Bearer top-secret" }),
+      }),
+    );
+    expect(fetch).toHaveBeenNthCalledWith(
+      2,
+      "https://accounts.example.net/login?next=%2Fdocs",
+      expect.not.objectContaining({ headers: expect.anything() }),
+    );
+  });
+
+  it("rejects redirect targets with embedded credentials", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(null, {
+      status: 302,
+      headers: { location: "https://user:top-secret@accounts.example.net/login" },
+    })));
+
+    await expect(captureSnapshot("https://preview.test", { path: "/" }, {
+      timeoutMs: 1000,
+      maxRedirects: 3,
+      maxBodyBytes: 1000,
+      ignoreHeaders: [],
+    })).rejects.toThrow("Redirect target must not include URL credentials");
   });
 
   it("does not read non-HTML response bodies", async () => {

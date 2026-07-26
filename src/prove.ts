@@ -1,6 +1,7 @@
 import { captureSnapshot } from "./snapshot.js";
 import { compareSnapshots } from "./compare.js";
 import type { DeployProofConfig, ProofResult, RouteInput, RouteResult } from "./types.js";
+import { safeRoutePath } from "./url.js";
 
 type ResolvedConfig = Required<Omit<DeployProofConfig, "preview" | "production">> & {
   preview: string;
@@ -15,6 +16,7 @@ function reportRoute(route: RouteInput): RouteResult["route"] {
   const { headers, ...safe } = route;
   return {
     ...safe,
+    path: safeRoutePath(route.path),
     ...(headers ? { headerNames: Object.keys(headers).map((name) => name.toLowerCase()).sort() } : {}),
   };
 }

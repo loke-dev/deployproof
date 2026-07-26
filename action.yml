@@ -19,13 +19,14 @@ inputs:
     description: Fail when warnings are found
     required: false
     default: "true"
-  version:
-    description: DeployProof npm version to run
-    required: false
-    default: latest
 runs:
   using: composite
   steps:
+    - name: Set up Node.js
+      uses: actions/setup-node@v7
+      with:
+        node-version: 24
+        package-manager-cache: false
     - name: Compare preview with production
       shell: bash
       env:
@@ -33,7 +34,6 @@ runs:
         DEPLOYPROOF_PRODUCTION: ${{ inputs.production }}
         DEPLOYPROOF_CONFIG: ${{ inputs.config }}
         DEPLOYPROOF_STRICT: ${{ inputs.strict }}
-        DEPLOYPROOF_VERSION: ${{ inputs.version }}
       run: |
         set -euo pipefail
         args=("--format" "github")
@@ -45,4 +45,4 @@ runs:
         else
           args+=("--no-strict")
         fi
-        npx --yes "deployproof@${DEPLOYPROOF_VERSION}" "${args[@]}"
+        node "$GITHUB_ACTION_PATH/dist/cli.js" "${args[@]}"
