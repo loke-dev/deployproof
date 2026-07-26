@@ -71,6 +71,8 @@ requests `/deployments/123/api/health`.
 
 Content type expectations match the response media type case-insensitively.
 Parameters such as `charset=utf-8` do not affect the match.
+Order-only differences in `Cache-Control`, CORS token lists, and `Vary` are
+normalized so equivalent header behavior does not create noisy reports.
 
 ## GitHub Action
 

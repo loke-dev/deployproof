@@ -102,6 +102,38 @@ describe("compareSnapshots", () => {
     expect(differences).toEqual([]);
   });
 
+  it("normalizes Cache-Control directive order without splitting quoted values", () => {
+    const matching = compareSnapshots(
+      { path: "/asset.js" },
+      snapshot({
+        headers: {
+          "cache-control": "Public, max-age=3600, stale-while-revalidate=\"60, 120\"",
+        },
+      }),
+      snapshot({
+        requestedUrl: "https://example.com/docs",
+        finalUrl: "https://example.com/docs",
+        headers: {
+          "cache-control": "stale-while-revalidate=\"60, 120\", MAX-AGE=3600, public",
+        },
+      }),
+    );
+    expect(matching).toEqual([]);
+
+    const drift = compareSnapshots(
+      { path: "/asset.js" },
+      snapshot({ headers: { "cache-control": "public, max-age=60" } }),
+      snapshot({
+        requestedUrl: "https://example.com/docs",
+        finalUrl: "https://example.com/docs",
+        headers: { "cache-control": "max-age=3600, public" },
+      }),
+    );
+    expect(drift).toContainEqual(
+      expect.objectContaining({ id: "DP004", field: "headers.cache-control" }),
+    );
+  });
+
   it("reports CORS and security-policy drift as warnings", () => {
     const differences = compareSnapshots(
       { path: "/api" },

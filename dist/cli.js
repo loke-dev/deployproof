@@ -522,11 +522,40 @@ function comparableHeader(name, value2) {
   if (name === "content-security-policy") {
     return value2.replace(/'nonce-[^']+'/gi, "'nonce-<dynamic>'");
   }
+  if (name === "cache-control") {
+    return cacheControlDirectives(value2).map((directive) => {
+      const separator = directive.indexOf("=");
+      return separator === -1 ? directive.toLowerCase() : `${directive.slice(0, separator).trim().toLowerCase()}=${directive.slice(separator + 1).trim()}`;
+    }).sort().join(", ");
+  }
   const normalize = COMMA_LIST_HEADERS.get(name);
   if (!normalize) return value2;
   return [...new Set(
     value2.split(",").map((item) => normalize(item.trim())).filter(Boolean)
   )].sort().join(", ");
+}
+function cacheControlDirectives(value2) {
+  const directives = [];
+  let start = 0;
+  let quoted = false;
+  let escaped = false;
+  for (let index = 0; index < value2.length; index += 1) {
+    const character = value2[index];
+    if (escaped) {
+      escaped = false;
+    } else if (character === "\\" && quoted) {
+      escaped = true;
+    } else if (character === '"') {
+      quoted = !quoted;
+    } else if (character === "," && !quoted) {
+      const directive2 = value2.slice(start, index).trim();
+      if (directive2) directives.push(directive2);
+      start = index + 1;
+    }
+  }
+  const directive = value2.slice(start).trim();
+  if (directive) directives.push(directive);
+  return directives;
 }
 function difference(route, id, severity, field, preview, production, message) {
   return { route, id, severity, field, preview, production, message };

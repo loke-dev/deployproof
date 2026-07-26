@@ -35,6 +35,17 @@ function comparableHeader(name: string, value: string | undefined): string | und
   if (name === "content-security-policy") {
     return value.replace(/'nonce-[^']+'/gi, "'nonce-<dynamic>'");
   }
+  if (name === "cache-control") {
+    return cacheControlDirectives(value)
+      .map((directive) => {
+        const separator = directive.indexOf("=");
+        return separator === -1
+          ? directive.toLowerCase()
+          : `${directive.slice(0, separator).trim().toLowerCase()}=${directive.slice(separator + 1).trim()}`;
+      })
+      .sort()
+      .join(", ");
+  }
   const normalize = COMMA_LIST_HEADERS.get(name);
   if (!normalize) return value;
   return [...new Set(
@@ -43,6 +54,32 @@ function comparableHeader(name: string, value: string | undefined): string | und
       .map((item) => normalize(item.trim()))
       .filter(Boolean),
   )].sort().join(", ");
+}
+
+function cacheControlDirectives(value: string): string[] {
+  const directives: string[] = [];
+  let start = 0;
+  let quoted = false;
+  let escaped = false;
+
+  for (let index = 0; index < value.length; index += 1) {
+    const character = value[index];
+    if (escaped) {
+      escaped = false;
+    } else if (character === "\\" && quoted) {
+      escaped = true;
+    } else if (character === "\"") {
+      quoted = !quoted;
+    } else if (character === "," && !quoted) {
+      const directive = value.slice(start, index).trim();
+      if (directive) directives.push(directive);
+      start = index + 1;
+    }
+  }
+
+  const directive = value.slice(start).trim();
+  if (directive) directives.push(directive);
+  return directives;
 }
 
 function difference(
