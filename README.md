@@ -67,7 +67,7 @@ configuration file.
 ## GitHub Action
 
 ```yaml
-- uses: loke-dev/deployproof@v0.1.2
+- uses: loke-dev/deployproof@v0.1.3
   with:
     preview: ${{ steps.deploy.outputs.deployment-url }}
     production: https://example.com
@@ -75,9 +75,10 @@ configuration file.
 ```
 
 The Action emits native annotations for each route difference. It compares
-cookie names and attributes such as `Secure`, `HttpOnly`, and `SameSite`, but
-never exposes cookie values. It runs the reviewed CLI bundle from the selected
-repository tag without downloading executable code from npm.
+cookie names and security attributes such as `Secure`, `HttpOnly`, and the
+`SameSite` mode, but never exposes cookie values. It runs the reviewed CLI
+bundle from the selected repository tag without downloading executable code
+from npm.
 
 ## Output formats
 

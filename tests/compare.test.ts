@@ -76,6 +76,23 @@ describe("compareSnapshots", () => {
     expect(drift).toContainEqual(expect.objectContaining({ id: "DP004", severity: "warning" }));
   });
 
+  it("detects SameSite cookie mode drift without cookie values", () => {
+    const differences = compareSnapshots(
+      { path: "/docs" },
+      snapshot({ cookies: [{ name: "session", attributes: ["httponly", "samesite=none", "secure"] }] }),
+      snapshot({
+        requestedUrl: "https://example.com/docs",
+        finalUrl: "https://example.com/docs",
+        cookies: [{ name: "session", attributes: ["httponly", "samesite=lax", "secure"] }],
+      }),
+    );
+
+    expect(differences).toContainEqual(
+      expect.objectContaining({ id: "DP005", severity: "warning", field: "cookies" }),
+    );
+    expect(JSON.stringify(differences)).not.toContain("cookie-value");
+  });
+
   it("enforces route expectations against preview", () => {
     const differences = compareSnapshots(
       { path: "/api", expect: { status: 204, contentType: "application/json" } },

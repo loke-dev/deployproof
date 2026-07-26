@@ -38,13 +38,25 @@ function cookieShapes(headers: Headers): CookieShape[] {
       const name = segments.shift()?.split("=", 1)[0]?.trim();
       if (!name) return undefined;
       const attributes = segments
-        .map((segment) => segment.split("=", 1)[0]!.toLowerCase())
+        .map((segment) => {
+          const separator = segment.indexOf("=");
+          const attribute = (separator === -1 ? segment : segment.slice(0, separator))
+            .trim()
+            .toLowerCase();
+          if (attribute !== "samesite" || separator === -1) return attribute;
+          const mode = segment.slice(separator + 1).trim().toLowerCase();
+          return ["lax", "none", "strict"].includes(mode)
+            ? `samesite=${mode}`
+            : "samesite=invalid";
+        })
         .filter(Boolean)
         .sort();
       return { name, attributes };
     })
     .filter((value): value is CookieShape => value !== undefined)
-    .sort((a, b) => a.name.localeCompare(b.name));
+    .sort((a, b) =>
+      a.name.localeCompare(b.name)
+      || a.attributes.join("\0").localeCompare(b.attributes.join("\0")));
 }
 
 function extractMetadata(body: string): Metadata {
@@ -150,6 +162,7 @@ export async function captureSnapshot(
     const contentType = response.headers.get("content-type") ?? "";
     const readable = route.method !== "HEAD" && /(?:text\/html|application\/xhtml\+xml)/i.test(contentType);
     const content = readable ? await readBounded(response, options.maxBodyBytes) : { body: "", bytes: 0, truncated: false };
+    if (!readable) await response.body?.cancel();
 
     return {
       requestedUrl: safeAbsoluteUrl(new URL(requested)),

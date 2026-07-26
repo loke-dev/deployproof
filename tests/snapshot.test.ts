@@ -9,9 +9,9 @@ describe("captureSnapshot", () => {
     const headers = new Headers({
       "content-type": "text/html",
       "content-security-policy": "default-src 'self'",
-      "set-cookie": "session=top-secret; Secure; HttpOnly; SameSite=Lax",
     });
-    Object.defineProperty(headers, "getSetCookie", { value: () => ["session=top-secret; Secure; HttpOnly; SameSite=Lax"] });
+    headers.append("set-cookie", "session=top-secret; Secure; HttpOnly; SameSite=Lax");
+    headers.append("set-cookie", "unsafe=another-secret; SameSite=private-mode");
     vi.stubGlobal("fetch", vi.fn(async () => new Response(
       "<title>Preview</title><link rel=\"canonical\" href=\"https://example.com/\">",
       { status: 200, headers },
@@ -25,8 +25,13 @@ describe("captureSnapshot", () => {
     });
 
     expect(result.metadata.title).toBe("Preview");
-    expect(result.cookies).toEqual([{ name: "session", attributes: ["httponly", "samesite", "secure"] }]);
+    expect(result.cookies).toEqual([
+      { name: "session", attributes: ["httponly", "samesite=lax", "secure"] },
+      { name: "unsafe", attributes: ["samesite=invalid"] },
+    ]);
     expect(JSON.stringify(result)).not.toContain("top-secret");
+    expect(JSON.stringify(result)).not.toContain("another-secret");
+    expect(JSON.stringify(result)).not.toContain("private-mode");
     expect(result).not.toHaveProperty("body");
   });
 
