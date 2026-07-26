@@ -39,6 +39,26 @@ describe("loadConfig", () => {
     }
   });
 
+  it("does not expose malformed configuration contents in parse errors", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "deployproof-config-"));
+    const config = join(directory, "deployproof.config.json");
+    try {
+      await writeFile(
+        config,
+        '{"routes":[{"headers":{"authorization":"Bearer malformed-secret"}}]',
+      );
+
+      await expect(loadConfig({ ...options, config })).rejects.toThrow(
+        /invalid JSON configuration/,
+      );
+      await expect(loadConfig({ ...options, config })).rejects.not.toThrow(
+        /malformed-secret/,
+      );
+    } finally {
+      await rm(directory, { recursive: true });
+    }
+  });
+
   it("rejects credentials embedded in target URLs", async () => {
     await expect(loadConfig({
       ...options,

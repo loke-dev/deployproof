@@ -218,11 +218,19 @@ async function loadConfig(options) {
   const configPath = await findConfig(options.config);
   let fileConfig = {};
   if (configPath) {
+    let source;
     try {
-      fileConfig = validateConfig(JSON.parse(await readFile(configPath, "utf8")));
+      source = await readFile(configPath, "utf8");
     } catch (error) {
-      throw new Error(`Could not parse ${configPath}: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(`Could not read ${configPath}: ${error instanceof Error ? error.message : String(error)}`);
     }
+    let parsed;
+    try {
+      parsed = JSON.parse(source);
+    } catch {
+      throw new Error(`Could not parse ${configPath}: invalid JSON configuration`);
+    }
+    fileConfig = validateConfig(parsed);
   }
   const preview = options.preview ?? process.env.DEPLOYPROOF_PREVIEW ?? fileConfig.preview;
   const production = options.production ?? process.env.DEPLOYPROOF_PRODUCTION ?? fileConfig.production;

@@ -138,11 +138,19 @@ export async function loadConfig(options: Options): Promise<Required<Omit<Deploy
   const configPath = await findConfig(options.config);
   let fileConfig: DeployProofConfig = {};
   if (configPath) {
+    let source: string;
     try {
-      fileConfig = validateConfig(JSON.parse(await readFile(configPath, "utf8")) as unknown);
+      source = await readFile(configPath, "utf8");
     } catch (error) {
-      throw new Error(`Could not parse ${configPath}: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(`Could not read ${configPath}: ${error instanceof Error ? error.message : String(error)}`);
     }
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(source) as unknown;
+    } catch {
+      throw new Error(`Could not parse ${configPath}: invalid JSON configuration`);
+    }
+    fileConfig = validateConfig(parsed);
   }
 
   const preview = options.preview ?? process.env.DEPLOYPROOF_PREVIEW ?? fileConfig.preview;
