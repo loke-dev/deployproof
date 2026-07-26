@@ -4,8 +4,11 @@ import { safeAbsoluteUrl, safePath } from "./url.js";
 const COMPARED_HEADERS = [
   "cache-control",
   "access-control-allow-credentials",
+  "access-control-allow-headers",
   "access-control-allow-methods",
   "access-control-allow-origin",
+  "access-control-expose-headers",
+  "access-control-max-age",
   "content-encoding",
   "content-language",
   "content-security-policy",

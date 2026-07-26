@@ -67,7 +67,7 @@ configuration file.
 ## GitHub Action
 
 ```yaml
-- uses: loke-dev/deployproof@v0.1.3
+- uses: loke-dev/deployproof@v0.1.4
   with:
     preview: ${{ steps.deploy.outputs.deployment-url }}
     production: https://example.com

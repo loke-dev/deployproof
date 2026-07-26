@@ -7,6 +7,9 @@ afterEach(() => vi.unstubAllGlobals());
 describe("captureSnapshot", () => {
   it("captures metadata without retaining body or cookie values", async () => {
     const headers = new Headers({
+      "access-control-allow-headers": "Authorization, Content-Type",
+      "access-control-expose-headers": "ETag",
+      "access-control-max-age": "600",
       "content-type": "text/html",
       "content-security-policy": "default-src 'self'",
     });
@@ -25,6 +28,11 @@ describe("captureSnapshot", () => {
     });
 
     expect(result.metadata.title).toBe("Preview");
+    expect(result.headers).toMatchObject({
+      "access-control-allow-headers": "Authorization, Content-Type",
+      "access-control-expose-headers": "ETag",
+      "access-control-max-age": "600",
+    });
     expect(result.cookies).toEqual([
       { name: "session", attributes: ["httponly", "samesite=lax", "secure"] },
       { name: "unsafe", attributes: ["samesite=invalid"] },

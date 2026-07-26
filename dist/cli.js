@@ -323,8 +323,11 @@ function safeRoutePath(path) {
 var COMPARED_HEADERS = [
   "cache-control",
   "access-control-allow-credentials",
+  "access-control-allow-headers",
   "access-control-allow-methods",
   "access-control-allow-origin",
+  "access-control-expose-headers",
+  "access-control-max-age",
   "content-encoding",
   "content-language",
   "content-security-policy",
@@ -479,9 +482,39 @@ async function captureSnapshot(base, route, options) {
 function stable(value2) {
   return JSON.stringify(value2);
 }
+var COMMA_LIST_HEADERS = /* @__PURE__ */ new Map([
+  ["access-control-allow-headers", (value2) => value2.toLowerCase()],
+  ["access-control-allow-methods", (value2) => value2.toUpperCase()],
+  ["access-control-expose-headers", (value2) => value2.toLowerCase()],
+  ["vary", (value2) => value2.toLowerCase()]
+]);
+var WARNING_HEADERS = /* @__PURE__ */ new Set([
+  "access-control-allow-credentials",
+  "access-control-allow-headers",
+  "access-control-allow-methods",
+  "access-control-allow-origin",
+  "access-control-expose-headers",
+  "content-security-policy",
+  "content-type",
+  "cross-origin-embedder-policy",
+  "cross-origin-opener-policy",
+  "cross-origin-resource-policy",
+  "permissions-policy",
+  "referrer-policy",
+  "strict-transport-security",
+  "x-content-type-options",
+  "x-frame-options"
+]);
 function comparableHeader(name, value2) {
-  if (name !== "content-security-policy" || value2 === void 0) return value2;
-  return value2.replace(/'nonce-[^']+'/gi, "'nonce-<dynamic>'");
+  if (value2 === void 0) return value2;
+  if (name === "content-security-policy") {
+    return value2.replace(/'nonce-[^']+'/gi, "'nonce-<dynamic>'");
+  }
+  const normalize = COMMA_LIST_HEADERS.get(name);
+  if (!normalize) return value2;
+  return [...new Set(
+    value2.split(",").map((item) => normalize(item.trim())).filter(Boolean)
+  )].sort().join(", ");
 }
 function difference(route, id, severity, field, preview, production, message) {
   return { route, id, severity, field, preview, production, message };
@@ -510,7 +543,7 @@ function compareSnapshots(route, preview, production) {
     const previewValue = comparableHeader(name, preview.headers[name]);
     const productionValue = comparableHeader(name, production.headers[name]);
     if (previewValue !== productionValue) {
-      const severity = ["content-type", "content-security-policy", "x-frame-options"].includes(name) ? "warning" : "notice";
+      const severity = WARNING_HEADERS.has(name) ? "warning" : "notice";
       differences.push(difference(path, "DP004", severity, `headers.${name}`, previewValue, productionValue, `${name} header differs`));
     }
   }

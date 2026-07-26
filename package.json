@@ -1,6 +1,6 @@
 {
   "name": "deployproof",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "Prove a preview behaves like production before you deploy.",
   "type": "module",
   "bin": {

@@ -5,9 +5,44 @@ function stable(value: unknown): string {
   return JSON.stringify(value);
 }
 
+const COMMA_LIST_HEADERS = new Map<string, (value: string) => string>([
+  ["access-control-allow-headers", (value) => value.toLowerCase()],
+  ["access-control-allow-methods", (value) => value.toUpperCase()],
+  ["access-control-expose-headers", (value) => value.toLowerCase()],
+  ["vary", (value) => value.toLowerCase()],
+]);
+
+const WARNING_HEADERS = new Set([
+  "access-control-allow-credentials",
+  "access-control-allow-headers",
+  "access-control-allow-methods",
+  "access-control-allow-origin",
+  "access-control-expose-headers",
+  "content-security-policy",
+  "content-type",
+  "cross-origin-embedder-policy",
+  "cross-origin-opener-policy",
+  "cross-origin-resource-policy",
+  "permissions-policy",
+  "referrer-policy",
+  "strict-transport-security",
+  "x-content-type-options",
+  "x-frame-options",
+]);
+
 function comparableHeader(name: string, value: string | undefined): string | undefined {
-  if (name !== "content-security-policy" || value === undefined) return value;
-  return value.replace(/'nonce-[^']+'/gi, "'nonce-<dynamic>'");
+  if (value === undefined) return value;
+  if (name === "content-security-policy") {
+    return value.replace(/'nonce-[^']+'/gi, "'nonce-<dynamic>'");
+  }
+  const normalize = COMMA_LIST_HEADERS.get(name);
+  if (!normalize) return value;
+  return [...new Set(
+    value
+      .split(",")
+      .map((item) => normalize(item.trim()))
+      .filter(Boolean),
+  )].sort().join(", ");
 }
 
 function difference(
@@ -49,7 +84,7 @@ export function compareSnapshots(route: RouteInput, preview: Snapshot, productio
     const previewValue = comparableHeader(name, preview.headers[name]);
     const productionValue = comparableHeader(name, production.headers[name]);
     if (previewValue !== productionValue) {
-      const severity = ["content-type", "content-security-policy", "x-frame-options"].includes(name) ? "warning" : "notice";
+      const severity = WARNING_HEADERS.has(name) ? "warning" : "notice";
       differences.push(difference(path, "DP004", severity, `headers.${name}`, previewValue, productionValue, `${name} header differs`));
     }
   }

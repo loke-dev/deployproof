@@ -76,6 +76,57 @@ describe("compareSnapshots", () => {
     expect(drift).toContainEqual(expect.objectContaining({ id: "DP004", severity: "warning" }));
   });
 
+  it("normalizes order-insensitive CORS and Vary token lists", () => {
+    const differences = compareSnapshots(
+      { path: "/api" },
+      snapshot({
+        headers: {
+          "access-control-allow-headers": "Content-Type, Authorization",
+          "access-control-allow-methods": "POST, GET",
+          "access-control-expose-headers": "X-Request-ID, ETag",
+          vary: "Origin, Accept-Encoding",
+        },
+      }),
+      snapshot({
+        requestedUrl: "https://example.com/docs",
+        finalUrl: "https://example.com/docs",
+        headers: {
+          "access-control-allow-headers": "authorization, content-type",
+          "access-control-allow-methods": "GET,POST",
+          "access-control-expose-headers": "etag,x-request-id",
+          vary: "accept-encoding, origin",
+        },
+      }),
+    );
+
+    expect(differences).toEqual([]);
+  });
+
+  it("reports CORS and security-policy drift as warnings", () => {
+    const differences = compareSnapshots(
+      { path: "/api" },
+      snapshot({
+        headers: {
+          "access-control-allow-headers": "authorization",
+          "strict-transport-security": "max-age=0",
+        },
+      }),
+      snapshot({
+        requestedUrl: "https://example.com/docs",
+        finalUrl: "https://example.com/docs",
+        headers: {
+          "access-control-allow-headers": "content-type",
+          "strict-transport-security": "max-age=31536000",
+        },
+      }),
+    );
+
+    expect(differences).toEqual([
+      expect.objectContaining({ id: "DP004", field: "headers.access-control-allow-headers", severity: "warning" }),
+      expect.objectContaining({ id: "DP004", field: "headers.strict-transport-security", severity: "warning" }),
+    ]);
+  });
+
   it("detects SameSite cookie mode drift without cookie values", () => {
     const differences = compareSnapshots(
       { path: "/docs" },
