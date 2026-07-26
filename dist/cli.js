@@ -350,6 +350,10 @@ var COMPARED_HEADERS = [
   "vary"
 ];
 var REDIRECT_STATUSES = /* @__PURE__ */ new Set([301, 302, 303, 307, 308]);
+var HTML_MEDIA_TYPES = /* @__PURE__ */ new Set(["text/html", "application/xhtml+xml"]);
+function mediaType(value2) {
+  return value2.split(";", 1)[0]?.trim().toLowerCase() ?? "";
+}
 function selectedHeaders(headers, ignored) {
   return Object.fromEntries(
     COMPARED_HEADERS.filter((name) => !ignored.includes(name)).map((name) => [name, headers.get(name)]).filter((entry) => entry[1] !== null)
@@ -480,7 +484,8 @@ async function captureSnapshot(base, route, options) {
     }
     if (!response) throw new Error("No response received");
     const contentType = response.headers.get("content-type") ?? "";
-    const readable = route.method !== "HEAD" && /(?:text\/html|application\/xhtml\+xml)/i.test(contentType);
+    const isHtml = HTML_MEDIA_TYPES.has(mediaType(contentType));
+    const readable = route.method !== "HEAD" && isHtml;
     const content = readable ? await readBounded(response, options.maxBodyBytes) : { body: "", bytes: 0, truncated: false };
     if (!readable) await response.body?.cancel();
     return {
@@ -491,7 +496,7 @@ async function captureSnapshot(base, route, options) {
       redirects,
       headers: selectedHeaders(response.headers, options.ignoreHeaders),
       cookies: cookieShapes(response.headers),
-      metadata: /html/i.test(contentType) ? extractMetadata(content.body, current) : {},
+      metadata: isHtml ? extractMetadata(content.body, current) : {},
       bytesRead: content.bytes,
       truncated: content.truncated
     };
@@ -580,7 +585,7 @@ function comparableFinalTarget(snapshot) {
   const final = new URL(snapshot.finalUrl);
   return final.origin === requested.origin ? `${final.pathname}${final.search}` : snapshot.finalUrl;
 }
-function mediaType(value2) {
+function mediaType2(value2) {
   return value2?.split(";", 1)[0]?.trim().toLowerCase();
 }
 function compareSnapshots(route, preview, production) {
@@ -618,7 +623,7 @@ function compareSnapshots(route, preview, production) {
   if (route.expect?.status !== void 0 && preview.status !== route.expect.status) {
     differences.push(difference(path, "DP007", "error", "expect.status", preview.status, route.expect.status, `Preview did not return expected status ${route.expect.status}`));
   }
-  if (route.expect?.contentType && mediaType(preview.headers["content-type"]) !== mediaType(route.expect.contentType)) {
+  if (route.expect?.contentType && mediaType2(preview.headers["content-type"]) !== mediaType2(route.expect.contentType)) {
     differences.push(difference(path, "DP008", "error", "expect.contentType", preview.headers["content-type"], route.expect.contentType, `Preview media type did not match ${route.expect.contentType}`));
   }
   return differences;

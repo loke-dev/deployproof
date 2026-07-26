@@ -25,6 +25,11 @@ const COMPARED_HEADERS = [
 ];
 
 const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
+const HTML_MEDIA_TYPES = new Set(["text/html", "application/xhtml+xml"]);
+
+function mediaType(value: string): string {
+  return value.split(";", 1)[0]?.trim().toLowerCase() ?? "";
+}
 
 function selectedHeaders(headers: Headers, ignored: string[]): Record<string, string> {
   return Object.fromEntries(
@@ -189,7 +194,8 @@ export async function captureSnapshot(
     }
     if (!response) throw new Error("No response received");
     const contentType = response.headers.get("content-type") ?? "";
-    const readable = route.method !== "HEAD" && /(?:text\/html|application\/xhtml\+xml)/i.test(contentType);
+    const isHtml = HTML_MEDIA_TYPES.has(mediaType(contentType));
+    const readable = route.method !== "HEAD" && isHtml;
     const content = readable ? await readBounded(response, options.maxBodyBytes) : { body: "", bytes: 0, truncated: false };
     if (!readable) await response.body?.cancel();
 
@@ -201,7 +207,7 @@ export async function captureSnapshot(
       redirects,
       headers: selectedHeaders(response.headers, options.ignoreHeaders),
       cookies: cookieShapes(response.headers),
-      metadata: /html/i.test(contentType) ? extractMetadata(content.body, current) : {},
+      metadata: isHtml ? extractMetadata(content.body, current) : {},
       bytesRead: content.bytes,
       truncated: content.truncated,
     };

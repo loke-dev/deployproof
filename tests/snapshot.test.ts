@@ -241,10 +241,13 @@ describe("captureSnapshot", () => {
     })).rejects.toThrow("Redirect target must not include URL credentials");
   });
 
-  it("does not read non-HTML response bodies", async () => {
+  it("does not read bodies when HTML appears only in a media type parameter", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => new Response(
-      '{"token":"should-not-be-read"}',
-      { status: 200, headers: { "content-type": "application/json" } },
+      '{"title":"<title>Should not be metadata</title>"}',
+      {
+        status: 200,
+        headers: { "content-type": "application/json; profile=\"text/html\"" },
+      },
     )));
 
     const result = await captureSnapshot("https://preview.test", { path: "/data" }, {
@@ -256,5 +259,25 @@ describe("captureSnapshot", () => {
 
     expect(result.bytesRead).toBe(0);
     expect(result.metadata).toEqual({});
+  });
+
+  it("reads XHTML response bodies for metadata", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(
+      "<html><head><title>XHTML document</title></head></html>",
+      {
+        status: 200,
+        headers: { "content-type": "Application/XHTML+XML; charset=utf-8" },
+      },
+    )));
+
+    const result = await captureSnapshot("https://preview.test", { path: "/docs" }, {
+      timeoutMs: 1000,
+      maxRedirects: 3,
+      maxBodyBytes: 1000,
+      ignoreHeaders: [],
+    });
+
+    expect(result.bytesRead).toBeGreaterThan(0);
+    expect(result.metadata).toEqual({ title: "XHTML document" });
   });
 });
