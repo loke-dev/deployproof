@@ -227,4 +227,18 @@ describe("compareSnapshots", () => {
     );
     expect(lookalike).toContainEqual(expect.objectContaining({ id: "DP008" }));
   });
+
+  it("matches expected content-type case-insensitively", () => {
+    const differences = compareSnapshots(
+      { path: "/api", expect: { contentType: "Application/JSON" } },
+      snapshot({ headers: { "content-type": "application/json; charset=utf-8" } }),
+      snapshot({
+        requestedUrl: "https://example.com/docs",
+        finalUrl: "https://example.com/docs",
+        headers: { "content-type": "application/json; charset=utf-8" },
+      }),
+    );
+
+    expect(differences).not.toContainEqual(expect.objectContaining({ id: "DP008" }));
+  });
 });

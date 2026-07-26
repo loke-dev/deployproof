@@ -148,7 +148,7 @@ export function compareSnapshots(route: RouteInput, preview: Snapshot, productio
   }
   if (
     route.expect?.contentType
-    && mediaType(preview.headers["content-type"]) !== mediaType(route.expect.contentType)
+    && mediaType(preview.headers["content-type"]) !== mediaType(route.expect.contentType.toLowerCase())
   ) {
     differences.push(difference(path, "DP008", "error", "expect.contentType", preview.headers["content-type"], route.expect.contentType, `Preview media type did not match ${route.expect.contentType}`));
   }
