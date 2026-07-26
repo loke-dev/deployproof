@@ -7,6 +7,7 @@
   --paper: #fff8e9;
   --paper-deep: #f3ead8;
   --pink: #ff5c8a;
+  --pink-text: #ce2c65;
   --pink-soft: #ffb5ca;
   --yellow: #ffcf63;
   --mint: #7ce6bd;
@@ -30,14 +31,14 @@ button { font: inherit; }
 .brand-mark span { color: var(--pink); position: absolute; transform: translate(5px, -4px); font-size: .8rem; }
 nav { display: flex; align-items: center; gap: 2rem; font: 500 .78rem var(--mono); }
 nav a { text-decoration: none; }
-nav a:hover { color: var(--pink); }
+nav a:hover { color: var(--pink-text); }
 .nav-source { padding: .7rem 1rem; border: 1px solid var(--ink); border-radius: 999px; }
 
 .hero { min-height: 720px; display: grid; grid-template-columns: 1.08fr .92fr; align-items: center; gap: clamp(3rem, 7vw, 7rem); padding-block: 6.5rem; }
 .eyebrow, .section-no { margin: 0 0 1.4rem; font: 500 .72rem var(--mono); letter-spacing: .12em; }
-.eyebrow span { padding: .4rem .55rem; background: var(--pink); color: white; border-radius: 4px; margin-right: .55rem; }
+.eyebrow span { padding: .4rem .55rem; background: var(--pink); color: var(--ink); border-radius: 4px; margin-right: .55rem; }
 h1 { margin: 0; font-size: clamp(3.8rem, 6.6vw, 6.5rem); line-height: .94; letter-spacing: -.065em; }
-h1 em { color: var(--pink); font-style: normal; }
+h1 em { color: var(--pink-text); font-style: normal; }
 .lede { max-width: 630px; margin: 2rem 0; color: var(--ink-soft); font-size: 1.12rem; line-height: 1.75; }
 .actions { display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap; }
 .install-command { display: inline-flex; align-items: center; gap: .9rem; min-height: 54px; padding: 0 1.1rem; border: 0; border-radius: 8px; background: var(--ink); color: var(--paper); cursor: pointer; box-shadow: 5px 5px 0 var(--pink); transition: transform .18s, box-shadow .18s; }
@@ -102,12 +103,12 @@ pre .warn { color: var(--yellow); }
 pre .summary { color: var(--pink-soft); }
 
 .boundary { margin-block: 7rem; display: grid; grid-template-columns: .55fr 1.4fr 1fr; gap: 3rem; align-items: start; }
-.boundary-label { writing-mode: vertical-rl; transform: rotate(180deg); color: var(--pink); font: 700 .72rem var(--mono); letter-spacing: .16em; }
+.boundary-label { writing-mode: vertical-rl; transform: rotate(180deg); color: var(--pink-text); font: 700 .72rem var(--mono); letter-spacing: .16em; }
 .boundary-copy h2 { font-size: clamp(2.2rem, 3.7vw, 4rem); }
 .boundary-copy p { color: var(--ink-soft); line-height: 1.75; }
 .boundary-metrics { border-top: 1px solid var(--ink); }
 .boundary-metrics div { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; padding: 1.2rem 0; border-bottom: 1px solid var(--line); }
-.boundary-metrics strong { font: 500 1.5rem var(--mono); color: var(--pink); }
+.boundary-metrics strong { font: 500 1.5rem var(--mono); color: var(--pink-text); }
 .boundary-metrics span { font-size: .78rem; color: var(--ink-soft); }
 
 .cta { padding: 7rem 0; background: var(--pink); color: var(--ink); text-align: center; }
@@ -115,7 +116,7 @@ pre .summary { color: var(--pink-soft); }
 .cta h2 { max-width: 850px; }
 .cta p:not(.section-no) { font-size: 1.05rem; }
 .install-command.light { margin-top: 1.5rem; background: var(--paper); color: var(--ink); box-shadow: 5px 5px 0 var(--ink); }
-.install-command.light [data-copy-label] { color: var(--pink); }
+.install-command.light [data-copy-label] { color: var(--pink-text); }
 
 footer { min-height: 100px; display: flex; justify-content: space-between; align-items: center; gap: 2rem; font: .7rem var(--mono); }
 footer p { color: var(--ink-soft); }
@@ -152,4 +153,3 @@ footer p { color: var(--ink-soft); }
   .terminal-grid { gap: 3rem; }
   footer { padding-block: 2rem; flex-direction: column; align-items: flex-start; }
 }
-
