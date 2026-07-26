@@ -36,8 +36,8 @@ jobs:
           production: https://deployproof.loke.dev
           strict: true
 
-  node-20-runtime:
-    name: Node 20 bundled CLI
+  npm-artifact:
+    name: Node 20 npm artifact
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -45,4 +45,16 @@ jobs:
         with:
           node-version: 20
           package-manager-cache: false
-      - run: node dist/cli.js --version
+      - name: Pack, install, and run published shape
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(node -p "require('./package.json').version")"
+          tarball="$RUNNER_TEMP/deployproof-${version}.tgz"
+          npm pack --ignore-scripts --pack-destination "$RUNNER_TEMP"
+          mkdir "$RUNNER_TEMP/smoke"
+          cd "$RUNNER_TEMP/smoke"
+          npm init --yes >/dev/null
+          npm install --ignore-scripts --no-audit --no-fund "$tarball"
+          test "$(node -p "Object.keys(require('./node_modules/deployproof/package.json').dependencies || {}).length")" = "0"
+          test "$(./node_modules/.bin/deployproof --version)" = "$version"
