@@ -12,15 +12,15 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "tsup src/cli.ts --format esm --clean --dts",
-    "check": "tsc --noEmit && vitest run && tsup src/cli.ts --format esm --clean --dts && vite build --config site/vite.config.ts",
+    "build": "tsup",
+    "check": "tsc --noEmit && vitest run && tsup && vite build --config site/vite.config.ts",
     "dev": "tsx src/cli.ts",
     "site:dev": "vite --config site/vite.config.ts",
     "site:build": "vite build --config site/vite.config.ts",
     "deploy": "vite build --config site/vite.config.ts && wrangler deploy",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "prepare": "tsup src/cli.ts --format esm --clean --dts"
+    "prepare": "tsup"
   },
   "keywords": [
     "deployment",
