@@ -23,8 +23,16 @@ function normalizeRoute(route: string | RouteInput): RouteInput {
   const input: unknown = typeof route === "string" ? { path: route } : route;
   if (!isRecord(input)) throw new Error("Every route must be a path string or object");
   if (typeof input.path !== "string" || !input.path) throw new Error("Every route needs a path");
-  if (input.method !== undefined && input.method !== "GET" && input.method !== "HEAD") {
-    throw new Error(`Route ${input.path} has an unsupported method`);
+  let method: RouteInput["method"] = "GET";
+  if (input.method !== undefined) {
+    if (typeof input.method !== "string") {
+      throw new Error(`Route ${input.path} has an unsupported method`);
+    }
+    const normalizedMethod = input.method.toUpperCase();
+    if (normalizedMethod !== "GET" && normalizedMethod !== "HEAD") {
+      throw new Error(`Route ${input.path} has an unsupported method`);
+    }
+    method = normalizedMethod;
   }
   let headers: Record<string, string> | undefined;
   if (input.headers !== undefined) {
@@ -72,7 +80,7 @@ function normalizeRoute(route: string | RouteInput): RouteInput {
   if (url.origin !== "https://deployproof.invalid") throw new Error(`Route must be relative: ${input.path}`);
   return {
     path: `${url.pathname}${url.search}`,
-    method: input.method ?? "GET",
+    method,
     ...(headers ? { headers } : {}),
     ...(expect ? { expect } : {}),
   };

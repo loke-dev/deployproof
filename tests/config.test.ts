@@ -104,6 +104,26 @@ describe("loadConfig", () => {
     }
   });
 
+  it("accepts lowercase route methods", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "deployproof-config-"));
+    const config = join(directory, "deployproof.config.json");
+    try {
+      await writeFile(config, JSON.stringify({
+        preview: "https://preview.example.com",
+        production: "https://example.com",
+        routes: [{ path: "/health", method: "get" }],
+      }));
+
+      const loaded = await loadConfig({ ...options, config });
+
+      expect(loaded.routes).toEqual([
+        { path: "/health", method: "GET" },
+      ]);
+    } finally {
+      await rm(directory, { recursive: true });
+    }
+  });
+
   it("rejects invalid custom request headers without exposing their values", async () => {
     const directory = await mkdtemp(join(tmpdir(), "deployproof-config-"));
     const config = join(directory, "deployproof.config.json");

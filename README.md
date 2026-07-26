@@ -128,6 +128,9 @@ remain informational.
 Response bodies are read only for HTML metadata, capped at 500 KB by default,
 and never included in output.
 
+Route method values are normalized case-insensitively during configuration
+loading, so `get`, `GET`, and `HEAD` are all supported.
+
 ## Development
 
 ```bash
