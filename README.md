@@ -3,7 +3,7 @@
 [![CI](https://github.com/loke-dev/deployproof/actions/workflows/ci.yml/badge.svg)](https://github.com/loke-dev/deployproof/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/loke-dev/deployproof/actions/workflows/codeql.yml/badge.svg)](https://github.com/loke-dev/deployproof/actions/workflows/codeql.yml)
 [![npm](https://img.shields.io/npm/v/deployproof)](https://www.npmjs.com/package/deployproof)
-[![license](https://img.shields.io/npm/l/deployproof)](LICENSE)
+[![MIT license](https://img.shields.io/badge/license-MIT-171816)](LICENSE)
 
 Prove that a preview deployment behaves like production before you merge it.
 DeployProof sends the same bounded request to both environments, then compares
