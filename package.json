@@ -1,6 +1,6 @@
 {
   "name": "deployproof",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Prove a preview behaves like production before you deploy.",
   "type": "module",
   "bin": {
@@ -45,11 +45,9 @@
   "engines": {
     "node": ">=20"
   },
-  "dependencies": {
-    "picocolors": "^1.1.1"
-  },
   "devDependencies": {
     "@types/node": "^24.0.0",
+    "picocolors": "^1.1.1",
     "tsup": "^8.5.0",
     "tsx": "^4.20.0",
     "typescript": "^5.9.0",
