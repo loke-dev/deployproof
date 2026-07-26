@@ -93,8 +93,10 @@ function extractMetadata(body: string, responseUrl: string): Metadata {
       && attribute(tag, "href") !== undefined;
   });
   const canonical = canonicalTag ? attribute(canonicalTag, "href") : undefined;
-  const robots = content(/<meta[^>]+name=["']robots["'][^>]+content=["']([^"']+)["'][^>]*>/i)
-    ?? content(/<meta[^>]+content=["']([^"']+)["'][^>]+name=["']robots["'][^>]*>/i);
+  const robotsTag = body.match(/<meta\b[^>]*>/gi)?.find((tag) =>
+    attribute(tag, "name")?.toLowerCase() === "robots"
+    && attribute(tag, "content") !== undefined);
+  const robots = robotsTag ? attribute(robotsTag, "content") : undefined;
   return {
     ...(title ? { title } : {}),
     ...(canonical ? { canonical: safeCanonical(canonical, responseUrl) } : {}),
@@ -103,8 +105,11 @@ function extractMetadata(body: string, responseUrl: string): Metadata {
 }
 
 function attribute(tag: string, name: string): string | undefined {
-  return new RegExp(`\\b${name}\\s*=\\s*(["'])([\\s\\S]*?)\\1`, "i")
-    .exec(tag)?.[2]?.trim();
+  const match = new RegExp(
+    `(?:^|\\s)${name}\\s*=\\s*(?:(["'])([\\s\\S]*?)\\1|([^\\s"'=<>\\x60]+))`,
+    "i",
+  ).exec(tag);
+  return (match?.[2] ?? match?.[3])?.trim();
 }
 
 async function readBounded(response: Response, maxBytes: number): Promise<{ body: string; bytes: number; truncated: boolean }> {

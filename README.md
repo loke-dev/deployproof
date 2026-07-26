@@ -77,6 +77,8 @@ The timeout applies independently to every request in a redirect chain,
 including reading the final HTML response body.
 Order-only differences in `Cache-Control`, CORS token lists, and `Vary` are
 normalized so equivalent header behavior does not create noisy reports.
+Canonical links and robots directives are recognized with quoted or unquoted
+HTML attribute values.
 
 ## GitHub Action
 

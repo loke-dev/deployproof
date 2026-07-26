@@ -182,6 +182,33 @@ describe("captureSnapshot", () => {
     expect(result.metadata.canonical).not.toContain("/wrong");
   });
 
+  it("reads unquoted metadata attributes without matching data attributes", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(
+      [
+        "<link data-rel=canonical href=/wrong>",
+        "<meta data-name=robots content=index>",
+        "<link href=/docs/canonical rel=canonical>",
+        "<meta content=noindex,nofollow name=ROBOTS>",
+      ].join(""),
+      { status: 200, headers: { "content-type": "text/html" } },
+    )));
+
+    const result = await captureSnapshot("https://preview.test", { path: "/docs" }, {
+      timeoutMs: 1000,
+      maxRedirects: 3,
+      maxBodyBytes: 1000,
+      ignoreHeaders: [],
+    });
+
+    expect(result.metadata).toEqual({
+      canonical: safePath(
+        new URL("https://preview.test/docs/canonical"),
+      ),
+      robots: "noindex,nofollow",
+    });
+    expect(result.metadata.canonical).not.toContain("/wrong");
+  });
+
   it("does not follow non-redirect 3xx responses with Location headers", async () => {
     const fetch = vi.fn(async () => new Response(null, {
       status: 304,
