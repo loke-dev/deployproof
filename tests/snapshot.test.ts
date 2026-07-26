@@ -2,7 +2,10 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { captureSnapshot } from "../src/snapshot.js";
 import { safeAbsoluteUrl, safePath } from "../src/url.js";
 
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.useRealTimers();
+  vi.unstubAllGlobals();
+});
 
 describe("captureSnapshot", () => {
   it("captures metadata without retaining body or cookie values", async () => {
@@ -93,6 +96,48 @@ describe("captureSnapshot", () => {
     }]);
     expect(result.finalUrl).toBe(
       safeAbsoluteUrl(new URL("https://preview.test/new?from=old")),
+    );
+  });
+
+  it("applies the timeout separately to each redirect hop", async () => {
+    vi.useFakeTimers();
+    const fetch = vi.fn((_input: string | URL | Request, init?: RequestInit) => {
+      const requestNumber = fetch.mock.calls.length;
+      return new Promise<Response>((resolve, reject) => {
+        const delay = setTimeout(() => {
+          resolve(requestNumber === 1
+            ? new Response(null, {
+                status: 302,
+                headers: { location: "/final" },
+              })
+            : new Response("", {
+                status: 200,
+                headers: { "content-type": "text/plain" },
+              }));
+        }, 75);
+        init?.signal?.addEventListener("abort", () => {
+          clearTimeout(delay);
+          reject(new DOMException("Aborted", "AbortError"));
+        }, { once: true });
+      });
+    });
+    vi.stubGlobal("fetch", fetch);
+
+    const snapshot = captureSnapshot("https://preview.test", { path: "/" }, {
+      timeoutMs: 100,
+      maxRedirects: 3,
+      maxBodyBytes: 1000,
+      ignoreHeaders: [],
+    });
+    await vi.advanceTimersByTimeAsync(150);
+
+    await expect(snapshot).resolves.toMatchObject({
+      status: 200,
+      redirects: [{ status: 302, location: "/final" }],
+    });
+    expect(fetch).toHaveBeenCalledTimes(2);
+    expect(fetch.mock.calls[0]?.[1]?.signal).not.toBe(
+      fetch.mock.calls[1]?.[1]?.signal,
     );
   });
 

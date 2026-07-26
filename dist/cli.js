@@ -444,11 +444,12 @@ async function captureSnapshot(base, route, options) {
   let includeCustomHeaders = true;
   const redirects = [];
   const started = performance.now();
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), options.timeoutMs);
+  let timer;
   try {
     let response;
     for (let hop = 0; hop <= options.maxRedirects; hop += 1) {
+      const controller = new AbortController();
+      timer = setTimeout(() => controller.abort(), options.timeoutMs);
       response = await fetch(current, {
         method: route.method ?? "GET",
         ...route.headers && includeCustomHeaders ? { headers: route.headers } : {},
@@ -480,6 +481,8 @@ async function captureSnapshot(base, route, options) {
       const normalizedLocation = target.origin === requestedOrigin ? safePath(target) : safeAbsoluteUrl(target);
       redirects.push({ status: response.status, location: normalizedLocation });
       await response.body?.cancel();
+      clearTimeout(timer);
+      timer = void 0;
       current = target.toString();
     }
     if (!response) throw new Error("No response received");
@@ -506,7 +509,7 @@ async function captureSnapshot(base, route, options) {
     }
     throw error;
   } finally {
-    clearTimeout(timer);
+    if (timer !== void 0) clearTimeout(timer);
   }
 }
 

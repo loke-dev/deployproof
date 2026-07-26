@@ -73,6 +73,8 @@ Content type expectations match the response media type case-insensitively.
 Parameters such as `charset=utf-8` do not affect the match.
 Custom request header names and values are validated when configuration loads,
 before any request is made.
+The timeout applies independently to every request in a redirect chain,
+including reading the final HTML response body.
 Order-only differences in `Cache-Control`, CORS token lists, and `Vary` are
 normalized so equivalent header behavior does not create noisy reports.
 

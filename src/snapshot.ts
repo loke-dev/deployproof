@@ -151,12 +151,13 @@ export async function captureSnapshot(
   let includeCustomHeaders = true;
   const redirects: RedirectHop[] = [];
   const started = performance.now();
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), options.timeoutMs);
+  let timer: ReturnType<typeof setTimeout> | undefined;
 
   try {
     let response: Response | undefined;
     for (let hop = 0; hop <= options.maxRedirects; hop += 1) {
+      const controller = new AbortController();
+      timer = setTimeout(() => controller.abort(), options.timeoutMs);
       response = await fetch(current, {
         method: route.method ?? "GET",
         ...(route.headers && includeCustomHeaders ? { headers: route.headers } : {}),
@@ -190,6 +191,8 @@ export async function captureSnapshot(
         : safeAbsoluteUrl(target);
       redirects.push({ status: response.status, location: normalizedLocation });
       await response.body?.cancel();
+      clearTimeout(timer);
+      timer = undefined;
       current = target.toString();
     }
     if (!response) throw new Error("No response received");
@@ -217,6 +220,6 @@ export async function captureSnapshot(
     }
     throw error;
   } finally {
-    clearTimeout(timer);
+    if (timer !== undefined) clearTimeout(timer);
   }
 }
