@@ -36,6 +36,11 @@ function normalizeRoute(route: string | RouteInput): RouteInput {
       if (typeof value !== "string") {
         throw new Error(`Route ${input.path} headers must be string values`);
       }
+      try {
+        new Headers([[name, value]]);
+      } catch {
+        throw new Error(`Route ${input.path} has an invalid header named "${name}"`);
+      }
       headers[name] = value;
     }
   }

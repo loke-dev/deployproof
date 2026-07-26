@@ -141,6 +141,11 @@ function normalizeRoute(route) {
       if (typeof value2 !== "string") {
         throw new Error(`Route ${input.path} headers must be string values`);
       }
+      try {
+        new Headers([[name, value2]]);
+      } catch {
+        throw new Error(`Route ${input.path} has an invalid header named "${name}"`);
+      }
       headers[name] = value2;
     }
   }

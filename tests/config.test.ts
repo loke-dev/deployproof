@@ -84,6 +84,50 @@ describe("loadConfig", () => {
     }
   });
 
+  it("rejects invalid custom request headers without exposing their values", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "deployproof-config-"));
+    const config = join(directory, "deployproof.config.json");
+    try {
+      await writeFile(config, JSON.stringify({
+        preview: "https://preview.example.com",
+        production: "https://example.com",
+        routes: [{
+          path: "/health",
+          headers: {
+            "bad header": "private-value",
+          },
+        }],
+      }));
+
+      await expect(loadConfig({ ...options, config })).rejects.toThrow(
+        'Route /health has an invalid header named "bad header"',
+      );
+      await expect(loadConfig({ ...options, config })).rejects.not.toThrow(
+        /private-value/,
+      );
+
+      await writeFile(config, JSON.stringify({
+        preview: "https://preview.example.com",
+        production: "https://example.com",
+        routes: [{
+          path: "/health",
+          headers: {
+            authorization: "Bearer private-value\ninjected",
+          },
+        }],
+      }));
+
+      await expect(loadConfig({ ...options, config })).rejects.toThrow(
+        'Route /health has an invalid header named "authorization"',
+      );
+      await expect(loadConfig({ ...options, config })).rejects.not.toThrow(
+        /private-value/,
+      );
+    } finally {
+      await rm(directory, { recursive: true });
+    }
+  });
+
   it("rejects empty content type expectations", async () => {
     const directory = await mkdtemp(join(tmpdir(), "deployproof-config-"));
     const config = join(directory, "deployproof.config.json");
