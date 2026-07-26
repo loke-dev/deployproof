@@ -63,6 +63,26 @@ describe("captureSnapshot", () => {
     );
   });
 
+  it("does not follow non-redirect 3xx responses with Location headers", async () => {
+    const fetch = vi.fn(async () => new Response(null, {
+      status: 304,
+      headers: { location: "https://preview.test/not-a-redirect" },
+    }));
+    vi.stubGlobal("fetch", fetch);
+
+    const result = await captureSnapshot("https://preview.test", { path: "/cached" }, {
+      timeoutMs: 1000,
+      maxRedirects: 3,
+      maxBodyBytes: 1000,
+      ignoreHeaders: [],
+    });
+
+    expect(fetch).toHaveBeenCalledOnce();
+    expect(result.status).toBe(304);
+    expect(result.redirects).toEqual([]);
+    expect(result.finalUrl).toBe("https://preview.test/cached");
+  });
+
   it("preserves the base URL path when resolving routes", async () => {
     const fetch = vi.fn(async () => new Response("", {
       status: 200,

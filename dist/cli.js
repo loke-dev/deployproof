@@ -342,6 +342,7 @@ var COMPARED_HEADERS = [
   "x-frame-options",
   "vary"
 ];
+var REDIRECT_STATUSES = /* @__PURE__ */ new Set([301, 302, 303, 307, 308]);
 function selectedHeaders(headers, ignored) {
   return Object.fromEntries(
     COMPARED_HEADERS.filter((name) => !ignored.includes(name)).map((name) => [name, headers.get(name)]).filter((entry) => entry[1] !== null)
@@ -425,7 +426,7 @@ async function captureSnapshot(base, route, options) {
         signal: controller.signal
       });
       const location = response.headers.get("location");
-      if (response.status < 300 || response.status >= 400 || !location) break;
+      if (!REDIRECT_STATUSES.has(response.status) || !location) break;
       if (hop === options.maxRedirects) {
         await response.body?.cancel();
         throw new Error(`Exceeded ${options.maxRedirects} redirects`);

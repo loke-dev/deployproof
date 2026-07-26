@@ -24,6 +24,8 @@ const COMPARED_HEADERS = [
   "vary",
 ];
 
+const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
+
 function selectedHeaders(headers: Headers, ignored: string[]): Record<string, string> {
   return Object.fromEntries(
     COMPARED_HEADERS
@@ -133,7 +135,7 @@ export async function captureSnapshot(
         signal: controller.signal,
       });
       const location = response.headers.get("location");
-      if (response.status < 300 || response.status >= 400 || !location) break;
+      if (!REDIRECT_STATUSES.has(response.status) || !location) break;
       if (hop === options.maxRedirects) {
         await response.body?.cancel();
         throw new Error(`Exceeded ${options.maxRedirects} redirects`);
