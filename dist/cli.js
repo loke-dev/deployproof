@@ -370,6 +370,10 @@ async function captureSnapshot(base, route, options) {
 function stable(value2) {
   return JSON.stringify(value2);
 }
+function comparableHeader(name, value2) {
+  if (name !== "content-security-policy" || value2 === void 0) return value2;
+  return value2.replace(/'nonce-[^']+'/gi, "'nonce-<dynamic>'");
+}
 function difference(route, id, severity, field, preview, production, message) {
   return { route, id, severity, field, preview, production, message };
 }
@@ -394,9 +398,11 @@ function compareSnapshots(route, preview, production) {
   }
   const headerNames = /* @__PURE__ */ new Set([...Object.keys(preview.headers), ...Object.keys(production.headers)]);
   for (const name of [...headerNames].sort()) {
-    if (preview.headers[name] !== production.headers[name]) {
+    const previewValue = comparableHeader(name, preview.headers[name]);
+    const productionValue = comparableHeader(name, production.headers[name]);
+    if (previewValue !== productionValue) {
       const severity = ["content-type", "content-security-policy", "x-frame-options"].includes(name) ? "warning" : "notice";
-      differences.push(difference(path, "DP004", severity, `headers.${name}`, preview.headers[name], production.headers[name], `${name} header differs`));
+      differences.push(difference(path, "DP004", severity, `headers.${name}`, previewValue, productionValue, `${name} header differs`));
     }
   }
   if (stable(preview.cookies) !== stable(production.cookies)) {

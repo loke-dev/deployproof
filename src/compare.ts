@@ -5,6 +5,11 @@ function stable(value: unknown): string {
   return JSON.stringify(value);
 }
 
+function comparableHeader(name: string, value: string | undefined): string | undefined {
+  if (name !== "content-security-policy" || value === undefined) return value;
+  return value.replace(/'nonce-[^']+'/gi, "'nonce-<dynamic>'");
+}
+
 function difference(
   route: string,
   id: string,
@@ -41,9 +46,11 @@ export function compareSnapshots(route: RouteInput, preview: Snapshot, productio
 
   const headerNames = new Set([...Object.keys(preview.headers), ...Object.keys(production.headers)]);
   for (const name of [...headerNames].sort()) {
-    if (preview.headers[name] !== production.headers[name]) {
+    const previewValue = comparableHeader(name, preview.headers[name]);
+    const productionValue = comparableHeader(name, production.headers[name]);
+    if (previewValue !== productionValue) {
       const severity = ["content-type", "content-security-policy", "x-frame-options"].includes(name) ? "warning" : "notice";
-      differences.push(difference(path, "DP004", severity, `headers.${name}`, preview.headers[name], production.headers[name], `${name} header differs`));
+      differences.push(difference(path, "DP004", severity, `headers.${name}`, previewValue, productionValue, `${name} header differs`));
     }
   }
 

@@ -14,7 +14,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node: [20, 24]
+        node: [22, 24]
     name: Node ${{ matrix.node }}
     steps:
       - uses: actions/checkout@v7
@@ -35,3 +35,14 @@ jobs:
           preview: https://deployproof.loke.dev
           production: https://deployproof.loke.dev
           strict: true
+
+  node-20-runtime:
+    name: Node 20 bundled CLI
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 20
+          package-manager-cache: false
+      - run: node dist/cli.js --version
