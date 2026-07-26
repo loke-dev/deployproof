@@ -59,8 +59,19 @@ jobs:
           else
             npm publish "$RELEASE_TARBALL" --provenance --access public
           fi
-          published_integrity="$(npm view "$package_spec" dist.integrity)"
-          test "$RELEASE_INTEGRITY" = "$published_integrity"
+          published_integrity=""
+          for attempt in 1 2 3 4 5 6; do
+            if published_integrity="$(npm view "$package_spec" dist.integrity 2>/dev/null)"; then
+              break
+            fi
+            if [[ "$attempt" -lt 6 ]]; then
+              sleep 5
+            fi
+          done
+          if [[ "$RELEASE_INTEGRITY" != "$published_integrity" ]]; then
+            printf '%s\n' "::error title=Integrity verification failed::The npm artifact does not match the release tarball"
+            exit 1
+          fi
       - name: Create GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
