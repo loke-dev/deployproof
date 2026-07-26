@@ -1,7 +1,6 @@
 import { createHash } from "node:crypto";
 
 function fingerprint(value: string): string {
-  if (/^sha256:[0-9a-f]{12}$/.test(value)) return value;
   return `sha256:${createHash("sha256").update(value).digest("hex").slice(0, 12)}`;
 }
 

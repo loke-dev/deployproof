@@ -17,4 +17,17 @@ describe("safe URL reporting", () => {
       "https://example.com/docs",
     );
   });
+
+  it("fingerprints values that already resemble internal fingerprints", () => {
+    const protectedValue = safeRoutePath("/callback?token=top-secret");
+    const fingerprint = new URL(
+      protectedValue,
+      "https://deployproof.invalid",
+    ).searchParams.get("token");
+
+    expect(fingerprint).toMatch(/^sha256:[0-9a-f]{12}$/);
+    expect(
+      safeRoutePath(`/callback?token=${encodeURIComponent(fingerprint!)}`),
+    ).not.toBe(protectedValue);
+  });
 });

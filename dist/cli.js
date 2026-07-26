@@ -299,7 +299,6 @@ function helpText() {
 // src/url.ts
 import { createHash } from "crypto";
 function fingerprint(value2) {
-  if (/^sha256:[0-9a-f]{12}$/.test(value2)) return value2;
   return `sha256:${createHash("sha256").update(value2).digest("hex").slice(0, 12)}`;
 }
 function safeSearch(url) {
@@ -571,7 +570,7 @@ function difference(route, id, severity, field, preview, production, message) {
 function comparableFinalTarget(snapshot) {
   const requested = new URL(snapshot.requestedUrl);
   const final = new URL(snapshot.finalUrl);
-  return final.origin === requested.origin ? safePath(final) : safeAbsoluteUrl(final);
+  return final.origin === requested.origin ? `${final.pathname}${final.search}` : snapshot.finalUrl;
 }
 function mediaType(value2) {
   return value2?.split(";", 1)[0]?.trim().toLowerCase();

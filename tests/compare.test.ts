@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { compareSnapshots } from "../src/compare.js";
 import type { Snapshot } from "../src/types.js";
+import { safeRoutePath } from "../src/url.js";
 
 function snapshot(overrides: Partial<Snapshot> = {}): Snapshot {
   return {
@@ -25,6 +26,23 @@ describe("compareSnapshots", () => {
       snapshot(),
       snapshot({ requestedUrl: "https://example.com/docs", finalUrl: "https://example.com/docs" }),
     );
+    expect(differences).toEqual([]);
+  });
+
+  it("does not fingerprint already-sanitized snapshot queries again", () => {
+    const finalPath = safeRoutePath("/docs?token=top-secret");
+    const differences = compareSnapshots(
+      { path: "/docs?token=top-secret" },
+      snapshot({
+        requestedUrl: `https://preview.test${finalPath}`,
+        finalUrl: `https://preview.test${finalPath}`,
+      }),
+      snapshot({
+        requestedUrl: `https://example.com${finalPath}`,
+        finalUrl: `https://example.com${finalPath}`,
+      }),
+    );
+
     expect(differences).toEqual([]);
   });
 

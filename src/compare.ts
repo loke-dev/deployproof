@@ -1,5 +1,5 @@
 import type { Difference, RouteInput, Snapshot } from "./types.js";
-import { safeAbsoluteUrl, safePath, safeRoutePath } from "./url.js";
+import { safeRoutePath } from "./url.js";
 
 function stable(value: unknown): string {
   return JSON.stringify(value);
@@ -97,7 +97,9 @@ function difference(
 function comparableFinalTarget(snapshot: Snapshot): string {
   const requested = new URL(snapshot.requestedUrl);
   const final = new URL(snapshot.finalUrl);
-  return final.origin === requested.origin ? safePath(final) : safeAbsoluteUrl(final);
+  return final.origin === requested.origin
+    ? `${final.pathname}${final.search}`
+    : snapshot.finalUrl;
 }
 
 function mediaType(value: string | undefined): string | undefined {
