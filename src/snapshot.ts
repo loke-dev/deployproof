@@ -82,8 +82,12 @@ function safeCanonical(value: string, responseUrl: string): string {
 function extractMetadata(body: string, responseUrl: string): Metadata {
   const content = (pattern: RegExp) => body.match(pattern)?.[1]?.trim();
   const title = content(/<title[^>]*>([\s\S]*?)<\/title>/i);
-  const canonical = content(/<link[^>]+rel=["'][^"']*canonical[^"']*["'][^>]+href=["']([^"']+)["'][^>]*>/i)
-    ?? content(/<link[^>]+href=["']([^"']+)["'][^>]+rel=["'][^"']*canonical[^"']*["'][^>]*>/i);
+  const canonicalTag = body.match(/<link\b[^>]*>/gi)?.find((tag) => {
+    const relations = attribute(tag, "rel")?.split(/\s+/) ?? [];
+    return relations.some((token) => token.toLowerCase() === "canonical")
+      && attribute(tag, "href") !== undefined;
+  });
+  const canonical = canonicalTag ? attribute(canonicalTag, "href") : undefined;
   const robots = content(/<meta[^>]+name=["']robots["'][^>]+content=["']([^"']+)["'][^>]*>/i)
     ?? content(/<meta[^>]+content=["']([^"']+)["'][^>]+name=["']robots["'][^>]*>/i);
   return {
@@ -91,6 +95,11 @@ function extractMetadata(body: string, responseUrl: string): Metadata {
     ...(canonical ? { canonical: safeCanonical(canonical, responseUrl) } : {}),
     ...(robots ? { robots } : {}),
   };
+}
+
+function attribute(tag: string, name: string): string | undefined {
+  return new RegExp(`\\b${name}\\s*=\\s*(["'])([\\s\\S]*?)\\1`, "i")
+    .exec(tag)?.[2]?.trim();
 }
 
 async function readBounded(response: Response, maxBytes: number): Promise<{ body: string; bytes: number; truncated: boolean }> {

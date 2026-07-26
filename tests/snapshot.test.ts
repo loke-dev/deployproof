@@ -115,6 +115,28 @@ describe("captureSnapshot", () => {
     expect(JSON.stringify(result)).not.toContain("top-secret");
   });
 
+  it("matches canonical as an exact link relation token", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(
+      [
+        "<link rel=\"notcanonical\" href=\"/wrong\">",
+        "<link href=\"/docs?draft=top-secret\" rel=\"alternate CANONICAL stylesheet\">",
+      ].join(""),
+      { status: 200, headers: { "content-type": "text/html" } },
+    )));
+
+    const result = await captureSnapshot("https://preview.test", { path: "/docs" }, {
+      timeoutMs: 1000,
+      maxRedirects: 3,
+      maxBodyBytes: 1000,
+      ignoreHeaders: [],
+    });
+
+    expect(result.metadata.canonical).toBe(
+      safePath(new URL("https://preview.test/docs?draft=top-secret")),
+    );
+    expect(result.metadata.canonical).not.toContain("/wrong");
+  });
+
   it("does not follow non-redirect 3xx responses with Location headers", async () => {
     const fetch = vi.fn(async () => new Response(null, {
       status: 304,

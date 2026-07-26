@@ -356,9 +356,9 @@ function cookieShapes(headers) {
     if (!name) return void 0;
     const attributes = segments.map((segment) => {
       const separator = segment.indexOf("=");
-      const attribute = (separator === -1 ? segment : segment.slice(0, separator)).trim().toLowerCase();
-      if (attribute === "expires") return "expires";
-      if (attribute !== "samesite" || separator === -1) return attribute;
+      const attribute2 = (separator === -1 ? segment : segment.slice(0, separator)).trim().toLowerCase();
+      if (attribute2 === "expires") return "expires";
+      if (attribute2 !== "samesite" || separator === -1) return attribute2;
       const mode = segment.slice(separator + 1).trim().toLowerCase();
       return ["lax", "none", "strict"].includes(mode) ? `samesite=${mode}` : "samesite=invalid";
     }).filter(Boolean).sort();
@@ -379,13 +379,20 @@ function safeCanonical(value2, responseUrl) {
 function extractMetadata(body, responseUrl) {
   const content = (pattern) => body.match(pattern)?.[1]?.trim();
   const title = content(/<title[^>]*>([\s\S]*?)<\/title>/i);
-  const canonical = content(/<link[^>]+rel=["'][^"']*canonical[^"']*["'][^>]+href=["']([^"']+)["'][^>]*>/i) ?? content(/<link[^>]+href=["']([^"']+)["'][^>]+rel=["'][^"']*canonical[^"']*["'][^>]*>/i);
+  const canonicalTag = body.match(/<link\b[^>]*>/gi)?.find((tag) => {
+    const relations = attribute(tag, "rel")?.split(/\s+/) ?? [];
+    return relations.some((token) => token.toLowerCase() === "canonical") && attribute(tag, "href") !== void 0;
+  });
+  const canonical = canonicalTag ? attribute(canonicalTag, "href") : void 0;
   const robots = content(/<meta[^>]+name=["']robots["'][^>]+content=["']([^"']+)["'][^>]*>/i) ?? content(/<meta[^>]+content=["']([^"']+)["'][^>]+name=["']robots["'][^>]*>/i);
   return {
     ...title ? { title } : {},
     ...canonical ? { canonical: safeCanonical(canonical, responseUrl) } : {},
     ...robots ? { robots } : {}
   };
+}
+function attribute(tag, name) {
+  return new RegExp(`\\b${name}\\s*=\\s*(["'])([\\s\\S]*?)\\1`, "i").exec(tag)?.[2]?.trim();
 }
 async function readBounded(response, maxBytes) {
   if (!response.body) return { body: "", bytes: 0, truncated: false };
