@@ -1,6 +1,11 @@
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
-import type { DeployProofConfig, Options, RouteInput } from "./types.js";
+import type {
+  DeployProofConfig,
+  Options,
+  RouteInput,
+  RouteMethod,
+} from "./types.js";
 
 const DEFAULT_FILES = ["deployproof.config.json", "deployproof.json"];
 
@@ -23,7 +28,7 @@ function normalizeRoute(route: string | RouteInput): RouteInput {
   const input: unknown = typeof route === "string" ? { path: route } : route;
   if (!isRecord(input)) throw new Error("Every route must be a path string or object");
   if (typeof input.path !== "string" || !input.path) throw new Error("Every route needs a path");
-  let method: RouteInput["method"] = "GET";
+  let method: RouteMethod = "GET";
   if (input.method !== undefined) {
     if (typeof input.method !== "string") {
       throw new Error(`Route ${input.path} has an unsupported method`);
@@ -32,7 +37,7 @@ function normalizeRoute(route: string | RouteInput): RouteInput {
     if (normalizedMethod !== "GET" && normalizedMethod !== "HEAD") {
       throw new Error(`Route ${input.path} has an unsupported method`);
     }
-    method = normalizedMethod;
+    method = normalizedMethod as RouteMethod;
   }
   let headers: Record<string, string> | undefined;
   if (input.headers !== undefined) {

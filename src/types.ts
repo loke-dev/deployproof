@@ -1,9 +1,13 @@
+export type RouteMethod = "GET" | "HEAD";
+
 export type Severity = "error" | "warning" | "notice";
 export type OutputFormat = "human" | "json" | "github" | "sarif";
 
+export type RouteInputMethod = RouteMethod | Lowercase<RouteMethod>;
+
 export interface RouteInput {
   path: string;
-  method?: "GET" | "HEAD";
+  method?: RouteInputMethod;
   headers?: Record<string, string>;
   expect?: {
     status?: number;
