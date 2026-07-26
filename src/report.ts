@@ -41,7 +41,15 @@ export function humanReport(result: ProofResult): string {
 }
 
 function commandValue(input: unknown): string {
-  return value(input).replaceAll("\r", " ").replaceAll("\n", " ").slice(0, 500);
+  return value(input)
+    .slice(0, 500)
+    .replaceAll("%", "%25")
+    .replaceAll("\r", "%0D")
+    .replaceAll("\n", "%0A");
+}
+
+function commandProperty(input: string): string {
+  return commandValue(input).replaceAll(":", "%3A").replaceAll(",", "%2C");
 }
 
 export function githubReport(result: ProofResult): string {
@@ -49,7 +57,7 @@ export function githubReport(result: ProofResult): string {
   for (const route of result.routes) {
     for (const item of route.differences) {
       const level = item.severity === "notice" ? "notice" : item.severity;
-      const title = encodeURIComponent(`${item.id} ${item.route}`);
+      const title = commandProperty(`${item.id} ${item.route}`);
       lines.push(`::${level} title=${title}::${commandValue(item.message)} (preview: ${commandValue(item.preview)}, production: ${commandValue(item.production)})`);
     }
   }
@@ -81,4 +89,3 @@ export function sarifReport(result: ProofResult): string {
     }],
   }, null, 2);
 }
-

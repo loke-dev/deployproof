@@ -11,6 +11,14 @@ function errorMessage(value: unknown): string {
   return value instanceof Error ? value.message : String(value);
 }
 
+function reportRoute(route: RouteInput): RouteResult["route"] {
+  const { headers, ...safe } = route;
+  return {
+    ...safe,
+    ...(headers ? { headerNames: Object.keys(headers).map((name) => name.toLowerCase()).sort() } : {}),
+  };
+}
+
 export async function prove(config: ResolvedConfig): Promise<ProofResult> {
   const requestOptions = {
     timeoutMs: config.timeoutMs,
@@ -32,7 +40,7 @@ export async function prove(config: ResolvedConfig): Promise<ProofResult> {
         production.status === "rejected" ? `production: ${errorMessage(production.reason)}` : undefined,
       ].filter(Boolean).join("; ");
       routes.push({
-        route,
+        route: reportRoute(route),
         differences: [{
           id: "DP000",
           severity: "error",
@@ -45,7 +53,7 @@ export async function prove(config: ResolvedConfig): Promise<ProofResult> {
       continue;
     }
     routes.push({
-      route,
+      route: reportRoute(route),
       preview: preview.value,
       production: production.value,
       differences: compareSnapshots(route, preview.value, production.value),
@@ -66,4 +74,3 @@ export async function prove(config: ResolvedConfig): Promise<ProofResult> {
     },
   };
 }
-

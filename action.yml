@@ -14,11 +14,15 @@ inputs:
   config:
     description: Path to a DeployProof config file
     required: false
-    default: deployproof.config.json
+    default: ""
   strict:
     description: Fail when warnings are found
     required: false
     default: "true"
+  version:
+    description: DeployProof npm version to run
+    required: false
+    default: latest
 runs:
   using: composite
   steps:
@@ -27,5 +31,18 @@ runs:
       env:
         DEPLOYPROOF_PREVIEW: ${{ inputs.preview }}
         DEPLOYPROOF_PRODUCTION: ${{ inputs.production }}
-      run: npx --yes deployproof@0.1.0 --config "${{ inputs.config }}" --format github ${{ inputs.strict == 'true' && '--strict' || '--no-strict' }}
-
+        DEPLOYPROOF_CONFIG: ${{ inputs.config }}
+        DEPLOYPROOF_STRICT: ${{ inputs.strict }}
+        DEPLOYPROOF_VERSION: ${{ inputs.version }}
+      run: |
+        set -euo pipefail
+        args=("--format" "github")
+        if [[ -n "$DEPLOYPROOF_CONFIG" ]]; then
+          args+=("--config" "$DEPLOYPROOF_CONFIG")
+        fi
+        if [[ "$DEPLOYPROOF_STRICT" == "true" ]]; then
+          args+=("--strict")
+        else
+          args+=("--no-strict")
+        fi
+        npx --yes "deployproof@${DEPLOYPROOF_VERSION}" "${args[@]}"

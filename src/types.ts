@@ -14,7 +14,7 @@ export interface RouteInput {
 export interface DeployProofConfig {
   preview?: string;
   production?: string;
-  routes: Array<string | RouteInput>;
+  routes?: Array<string | RouteInput>;
   timeoutMs?: number;
   maxRedirects?: number;
   maxBodyBytes?: number;
@@ -35,6 +35,10 @@ export interface RedirectHop {
   status: number;
   location: string;
 }
+
+export type ReportRoute = Omit<RouteInput, "headers"> & {
+  headerNames?: string[];
+};
 
 export interface Metadata {
   title?: string;
@@ -71,7 +75,7 @@ export interface Difference {
 }
 
 export interface RouteResult {
-  route: RouteInput;
+  route: ReportRoute;
   preview?: Snapshot;
   production?: Snapshot;
   differences: Difference[];
@@ -90,4 +94,3 @@ export interface ProofResult {
     matching: number;
   };
 }
-

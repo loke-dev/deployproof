@@ -29,9 +29,9 @@ describe("captureSnapshot", () => {
     expect(result).not.toHaveProperty("body");
   });
 
-  it("normalizes redirect locations to paths", async () => {
+  it("normalizes same-origin redirect locations to paths with queries", async () => {
     const fetch = vi.fn()
-      .mockResolvedValueOnce(new Response(null, { status: 308, headers: { location: "https://preview.test/new" } }))
+      .mockResolvedValueOnce(new Response(null, { status: 308, headers: { location: "https://preview.test/new?from=old" } }))
       .mockResolvedValueOnce(new Response("", { status: 200, headers: { "content-type": "text/plain" } }));
     vi.stubGlobal("fetch", fetch);
     const result = await captureSnapshot("https://preview.test", { path: "/old" }, {
@@ -40,8 +40,46 @@ describe("captureSnapshot", () => {
       maxBodyBytes: 1000,
       ignoreHeaders: [],
     });
-    expect(result.redirects).toEqual([{ status: 308, location: "/new" }]);
-    expect(result.finalUrl).toBe("https://preview.test/new");
+    expect(result.redirects).toEqual([{ status: 308, location: "/new?from=old" }]);
+    expect(result.finalUrl).toBe("https://preview.test/new?from=old");
+  });
+
+  it("keeps the origin for cross-origin redirects", async () => {
+    const fetch = vi.fn()
+      .mockResolvedValueOnce(new Response(null, {
+        status: 302,
+        headers: { location: "https://accounts.example.net/login?next=%2Fdocs" },
+      }))
+      .mockResolvedValueOnce(new Response("", { status: 200, headers: { "content-type": "text/html" } }));
+    vi.stubGlobal("fetch", fetch);
+
+    const result = await captureSnapshot("https://preview.test", { path: "/docs" }, {
+      timeoutMs: 1000,
+      maxRedirects: 3,
+      maxBodyBytes: 1000,
+      ignoreHeaders: [],
+    });
+
+    expect(result.redirects).toEqual([{
+      status: 302,
+      location: "https://accounts.example.net/login?next=%2Fdocs",
+    }]);
+  });
+
+  it("does not read non-HTML response bodies", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(
+      '{"token":"should-not-be-read"}',
+      { status: 200, headers: { "content-type": "application/json" } },
+    )));
+
+    const result = await captureSnapshot("https://preview.test", { path: "/data" }, {
+      timeoutMs: 1000,
+      maxRedirects: 3,
+      maxBodyBytes: 1000,
+      ignoreHeaders: [],
+    });
+
+    expect(result.bytesRead).toBe(0);
+    expect(result.metadata).toEqual({});
   });
 });
-

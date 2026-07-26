@@ -16,10 +16,11 @@ function difference(
   return { route, id, severity, field, preview, production, message };
 }
 
-function pathsMatch(previewUrl: string, productionUrl: string): boolean {
-  const preview = new URL(previewUrl);
-  const production = new URL(productionUrl);
-  return preview.pathname === production.pathname && preview.search === production.search;
+function comparableFinalTarget(snapshot: Snapshot): string {
+  const requested = new URL(snapshot.requestedUrl);
+  const final = new URL(snapshot.finalUrl);
+  const path = `${final.pathname}${final.search}`;
+  return final.origin === requested.origin ? path : `${final.origin}${path}`;
 }
 
 export function compareSnapshots(route: RouteInput, preview: Snapshot, production: Snapshot): Difference[] {
@@ -29,8 +30,10 @@ export function compareSnapshots(route: RouteInput, preview: Snapshot, productio
   if (preview.status !== production.status) {
     differences.push(difference(path, "DP001", "error", "status", preview.status, production.status, "HTTP status differs"));
   }
-  if (!pathsMatch(preview.finalUrl, production.finalUrl)) {
-    differences.push(difference(path, "DP002", "error", "finalUrl", new URL(preview.finalUrl).pathname, new URL(production.finalUrl).pathname, "Final route differs"));
+  const previewTarget = comparableFinalTarget(preview);
+  const productionTarget = comparableFinalTarget(production);
+  if (previewTarget !== productionTarget) {
+    differences.push(difference(path, "DP002", "error", "finalUrl", previewTarget, productionTarget, "Final route or external origin differs"));
   }
   if (stable(preview.redirects) !== stable(production.redirects)) {
     differences.push(difference(path, "DP003", "warning", "redirects", preview.redirects, production.redirects, "Redirect chain differs"));
@@ -64,4 +67,3 @@ export function compareSnapshots(route: RouteInput, preview: Snapshot, productio
 
   return differences;
 }
-

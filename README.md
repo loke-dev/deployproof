@@ -10,8 +10,8 @@ the behavior that commonly drifts between them: status codes, redirect chains,
 final paths, cache and security headers, cookie attributes, canonical URLs,
 robots directives, and titles.
 
-It is read-only, does not need credentials, and never prints response bodies or
-cookie values.
+It is read-only, does not need credentials, and never prints response bodies,
+cookie values, or custom request-header values.
 
 ## Quick start
 
@@ -62,7 +62,7 @@ configuration file.
 ## GitHub Action
 
 ```yaml
-- uses: loke-dev/deployproof@v0
+- uses: loke-dev/deployproof@master
   with:
     preview: ${{ steps.deploy.outputs.deployment-url }}
     production: https://example.com
@@ -112,4 +112,3 @@ pnpm dev -- --preview http://localhost:4173 --production https://example.com
 
 DeployProof is MIT licensed. Product documentation is at
 [deployproof.loke.dev](https://deployproof.loke.dev).
-

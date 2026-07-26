@@ -28,6 +28,21 @@ describe("compareSnapshots", () => {
     expect(differences).toEqual([]);
   });
 
+  it("flags redirects that leave the compared origins", () => {
+    const differences = compareSnapshots(
+      { path: "/docs" },
+      snapshot({ finalUrl: "https://accounts.example.net/login?next=%2Fdocs" }),
+      snapshot({
+        requestedUrl: "https://example.com/docs",
+        finalUrl: "https://example.com/docs",
+      }),
+    );
+
+    expect(differences).toContainEqual(
+      expect.objectContaining({ id: "DP002", severity: "error" }),
+    );
+  });
+
   it("finds status, header, and metadata drift", () => {
     const differences = compareSnapshots(
       { path: "/docs" },

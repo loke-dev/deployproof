@@ -23,7 +23,14 @@ const result: ProofResult = {
 
 describe("reports", () => {
   it("emits GitHub commands", () => {
-    expect(githubReport(result)).toContain("::error title=DP001%20%2F::HTTP status differs");
+    expect(githubReport(result)).toContain("::error title=DP001 /::HTTP status differs");
+  });
+
+  it("escapes workflow command data", () => {
+    const unsafe: ProofResult = structuredClone(result);
+    unsafe.routes[0]!.differences[0]!.message = "line one%\nline two";
+
+    expect(githubReport(unsafe)).toContain("line one%25%0Aline two");
   });
 
   it("emits valid SARIF", () => {
@@ -32,4 +39,3 @@ describe("reports", () => {
     expect(sarif.runs[0].results[0].ruleId).toBe("DP001");
   });
 });
-

@@ -2,10 +2,14 @@ import type { CookieShape, Metadata, RedirectHop, RouteInput, Snapshot } from ".
 
 const COMPARED_HEADERS = [
   "cache-control",
+  "access-control-allow-credentials",
+  "access-control-allow-methods",
+  "access-control-allow-origin",
   "content-encoding",
   "content-language",
   "content-security-policy",
   "content-type",
+  "cross-origin-embedder-policy",
   "cross-origin-opener-policy",
   "cross-origin-resource-policy",
   "permissions-policy",
@@ -13,6 +17,7 @@ const COMPARED_HEADERS = [
   "strict-transport-security",
   "x-content-type-options",
   "x-frame-options",
+  "vary",
 ];
 
 function selectedHeaders(headers: Headers, ignored: string[]): Record<string, string> {
@@ -94,6 +99,7 @@ export async function captureSnapshot(
   options: { timeoutMs: number; maxRedirects: number; maxBodyBytes: number; ignoreHeaders: string[] },
 ): Promise<Snapshot> {
   const requested = new URL(route.path, `${base}/`).toString();
+  const requestedOrigin = new URL(requested).origin;
   let current = requested;
   const redirects: RedirectHop[] = [];
   const started = performance.now();
@@ -112,12 +118,16 @@ export async function captureSnapshot(
       const location = response.headers.get("location");
       if (response.status < 300 || response.status >= 400 || !location) break;
       if (hop === options.maxRedirects) throw new Error(`Exceeded ${options.maxRedirects} redirects`);
-      redirects.push({ status: response.status, location: new URL(location, current).pathname });
-      current = new URL(location, current).toString();
+      const target = new URL(location, current);
+      const normalizedLocation = target.origin === requestedOrigin
+        ? `${target.pathname}${target.search}`
+        : target.toString();
+      redirects.push({ status: response.status, location: normalizedLocation });
+      current = target.toString();
     }
     if (!response) throw new Error("No response received");
     const contentType = response.headers.get("content-type") ?? "";
-    const readable = route.method !== "HEAD" && /(?:text|json|xml|javascript|svg)/i.test(contentType);
+    const readable = route.method !== "HEAD" && /(?:text\/html|application\/xhtml\+xml)/i.test(contentType);
     const content = readable ? await readBounded(response, options.maxBodyBytes) : { body: "", bytes: 0, truncated: false };
 
     return {
