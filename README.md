@@ -1,6 +1,7 @@
 # DeployProof
 
 [![CI](https://github.com/loke-dev/deployproof/actions/workflows/ci.yml/badge.svg)](https://github.com/loke-dev/deployproof/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/loke-dev/deployproof/actions/workflows/codeql.yml/badge.svg)](https://github.com/loke-dev/deployproof/actions/workflows/codeql.yml)
 [![npm](https://img.shields.io/npm/v/deployproof)](https://www.npmjs.com/package/deployproof)
 [![license](https://img.shields.io/npm/l/deployproof)](LICENSE)
 
@@ -67,7 +68,7 @@ configuration file.
 ## GitHub Action
 
 ```yaml
-- uses: loke-dev/deployproof@v0.1.4
+- uses: loke-dev/deployproof@v0.1.5
   with:
     preview: ${{ steps.deploy.outputs.deployment-url }}
     production: https://example.com

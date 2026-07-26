@@ -16,14 +16,14 @@ inputs:
     required: false
     default: ""
   strict:
-    description: Fail when warnings are found
+    description: Boolean string; true fails when warnings are found
     required: false
     default: "true"
 runs:
   using: composite
   steps:
     - name: Set up Node.js
-      uses: actions/setup-node@v7
+      uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
       with:
         node-version: 24
         package-manager-cache: false
@@ -40,9 +40,12 @@ runs:
         if [[ -n "$DEPLOYPROOF_CONFIG" ]]; then
           args+=("--config" "$DEPLOYPROOF_CONFIG")
         fi
-        if [[ "$DEPLOYPROOF_STRICT" == "true" ]]; then
-          args+=("--strict")
-        else
-          args+=("--no-strict")
-        fi
+        case "$DEPLOYPROOF_STRICT" in
+          true) args+=("--strict") ;;
+          false) args+=("--no-strict") ;;
+          *)
+            printf '%s\n' "::error title=Invalid DeployProof input::strict must be true or false"
+            exit 2
+            ;;
+        esac
         node "$GITHUB_ACTION_PATH/dist/cli.js" "${args[@]}"

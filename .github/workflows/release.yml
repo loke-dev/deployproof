@@ -9,16 +9,29 @@ permissions:
   contents: write
   id-token: write
 
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   publish:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     environment: npm
     steps:
-      - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6
+      - name: Verify publishing is enabled
+        env:
+          NPM_PUBLISH_ENABLED: ${{ vars.NPM_PUBLISH_ENABLED }}
+        run: |
+          if [[ "$NPM_PUBLISH_ENABLED" != "true" ]]; then
+            printf '%s\n' "::error title=Publishing disabled::Set NPM_PUBLISH_ENABLED to true before creating a release tag"
+            exit 1
+          fi
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: pnpm/action-setup@b0f76dfb45f55f8421693e4803ac7bb65143bd34 # v6
         with:
           run_install: false
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: 24
           registry-url: https://registry.npmjs.org
@@ -27,19 +40,31 @@ jobs:
       - run: pnpm check
       - name: Verify tag matches package version
         run: test "$GITHUB_REF_NAME" = "v$(node -p "require('./package.json').version")"
-      - run: npm pack
-      - name: Create GitHub release
+      - name: Pack release artifact
+        id: pack
         run: |
-          gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 ||
-            gh release create "$GITHUB_REF_NAME" deployproof-*.tgz --verify-tag --generate-notes
-        env:
-          GH_TOKEN: ${{ github.token }}
+          npm pack --ignore-scripts --json > "$RUNNER_TEMP/pack.json"
+          tarball="$(node -p "require(process.env.RUNNER_TEMP + '/pack.json')[0].filename")"
+          integrity="$(node -p "require(process.env.RUNNER_TEMP + '/pack.json')[0].integrity")"
+          printf 'tarball=%s\n' "$tarball" >> "$GITHUB_OUTPUT"
+          printf 'integrity=%s\n' "$integrity" >> "$GITHUB_OUTPUT"
       - name: Publish to npm
-        if: vars.NPM_PUBLISH_ENABLED == 'true'
+        env:
+          RELEASE_TARBALL: ${{ steps.pack.outputs.tarball }}
+          RELEASE_INTEGRITY: ${{ steps.pack.outputs.integrity }}
         run: |
           package_spec="$(node -p "const p=require('./package.json'); p.name+'@'+p.version")"
           if npm view "$package_spec" version >/dev/null 2>&1; then
             echo "$package_spec is already published"
           else
-            npm publish --provenance --access public
+            npm publish "$RELEASE_TARBALL" --provenance --access public
           fi
+          published_integrity="$(npm view "$package_spec" dist.integrity)"
+          test "$RELEASE_INTEGRITY" = "$published_integrity"
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TARBALL: ${{ steps.pack.outputs.tarball }}
+        run: |
+          gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 ||
+            gh release create "$GITHUB_REF_NAME" "$RELEASE_TARBALL" --verify-tag --generate-notes

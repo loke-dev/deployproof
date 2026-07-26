@@ -8,20 +8,25 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   check:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
-        node: [22, 24]
+        node: [20, 22, 24]
     name: Node ${{ matrix.node }}
     steps:
-      - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: pnpm/action-setup@b0f76dfb45f55f8421693e4803ac7bb65143bd34 # v6
         with:
           run_install: false
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: ${{ matrix.node }}
           cache: pnpm
@@ -35,13 +40,26 @@ jobs:
           preview: https://deployproof.loke.dev
           production: https://deployproof.loke.dev
           strict: true
+      - name: Reject invalid Action strict input
+        id: invalid-strict
+        if: matrix.node == 24
+        continue-on-error: true
+        uses: ./
+        with:
+          preview: https://deployproof.loke.dev
+          production: https://deployproof.loke.dev
+          strict: invalid
+      - name: Verify invalid Action input failed
+        if: always() && matrix.node == 24
+        run: test "${{ steps.invalid-strict.outcome }}" = "failure"
 
   npm-artifact:
     name: Node 20 npm artifact
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: 20
           package-manager-cache: false
