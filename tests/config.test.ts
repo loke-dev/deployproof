@@ -1,4 +1,4 @@
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -19,6 +19,24 @@ describe("loadConfig", () => {
     });
 
     expect(config.routes).toEqual([{ path: "/", method: "GET" }]);
+  });
+
+  it("reports unreadable conventional config paths", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "deployproof-config-"));
+    const previousDirectory = process.cwd();
+    try {
+      await mkdir(join(directory, "deployproof.config.json"));
+      process.chdir(directory);
+
+      await expect(loadConfig({
+        ...options,
+        preview: "https://preview.example.com",
+        production: "https://example.com",
+      })).rejects.toThrow(/Could not read .*deployproof\.config\.json/);
+    } finally {
+      process.chdir(previousDirectory);
+      await rm(directory, { recursive: true });
+    }
   });
 
   it("rejects credentials embedded in target URLs", async () => {

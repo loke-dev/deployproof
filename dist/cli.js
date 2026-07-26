@@ -198,10 +198,13 @@ function validateConfig(value2) {
 async function findConfig(explicit) {
   if (explicit) return resolve(explicit);
   for (const file of DEFAULT_FILES) {
+    const path = resolve(file);
     try {
-      await readFile(resolve(file), "utf8");
-      return resolve(file);
-    } catch {
+      await readFile(path, "utf8");
+      return path;
+    } catch (error) {
+      if (error.code === "ENOENT") continue;
+      throw new Error(`Could not read ${path}: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
   return void 0;

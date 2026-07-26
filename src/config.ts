@@ -114,11 +114,13 @@ function validateConfig(value: unknown): DeployProofConfig {
 async function findConfig(explicit?: string): Promise<string | undefined> {
   if (explicit) return resolve(explicit);
   for (const file of DEFAULT_FILES) {
+    const path = resolve(file);
     try {
-      await readFile(resolve(file), "utf8");
-      return resolve(file);
-    } catch {
-      // Try the next conventional file.
+      await readFile(path, "utf8");
+      return path;
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === "ENOENT") continue;
+      throw new Error(`Could not read ${path}: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
   return undefined;
