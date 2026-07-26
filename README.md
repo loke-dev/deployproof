@@ -69,6 +69,9 @@ Path prefixes in preview and production URLs are preserved. For example, a
 route of `/api/health` under `https://preview.example.com/deployments/123`
 requests `/deployments/123/api/health`.
 
+Content type expectations match the response media type case-insensitively.
+Parameters such as `charset=utf-8` do not affect the match.
+
 ## GitHub Action
 
 ```yaml
@@ -109,7 +112,7 @@ remain informational.
 | `DP005` | Cookie names or security attributes | warning |
 | `DP006` | Title, canonical, or robots metadata | notice or warning |
 | `DP007` | Explicit status expectation | error |
-| `DP008` | Explicit content type expectation | error |
+| `DP008` | Explicit response media type expectation | error |
 
 Response bodies are read only for HTML metadata, capped at 500 KB by default,
 and never included in output.

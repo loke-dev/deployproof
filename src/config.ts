@@ -52,12 +52,15 @@ function normalizeRoute(route: string | RouteInput): RouteInput {
     )) {
       throw new Error(`Route ${input.path} expected status must be between 100 and 599`);
     }
-    if (contentType !== undefined && typeof contentType !== "string") {
-      throw new Error(`Route ${input.path} expected content type must be a string`);
+    if (contentType !== undefined && (
+      typeof contentType !== "string"
+      || contentType.trim().length === 0
+    )) {
+      throw new Error(`Route ${input.path} expected content type must be a non-empty string`);
     }
     expect = {
       ...(status !== undefined ? { status } : {}),
-      ...(contentType !== undefined ? { contentType } : {}),
+      ...(contentType !== undefined ? { contentType: contentType.trim() } : {}),
     };
   }
   const url = new URL(input.path, "https://deployproof.invalid");

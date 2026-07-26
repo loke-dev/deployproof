@@ -152,12 +152,12 @@ function normalizeRoute(route) {
     if (status !== void 0 && (typeof status !== "number" || !Number.isInteger(status) || status < 100 || status > 599)) {
       throw new Error(`Route ${input.path} expected status must be between 100 and 599`);
     }
-    if (contentType !== void 0 && typeof contentType !== "string") {
-      throw new Error(`Route ${input.path} expected content type must be a string`);
+    if (contentType !== void 0 && (typeof contentType !== "string" || contentType.trim().length === 0)) {
+      throw new Error(`Route ${input.path} expected content type must be a non-empty string`);
     }
     expect = {
       ...status !== void 0 ? { status } : {},
-      ...contentType !== void 0 ? { contentType } : {}
+      ...contentType !== void 0 ? { contentType: contentType.trim() } : {}
     };
   }
   const url = new URL(input.path, "https://deployproof.invalid");
@@ -525,6 +525,9 @@ function comparableFinalTarget(snapshot) {
   const final = new URL(snapshot.finalUrl);
   return final.origin === requested.origin ? safePath(final) : safeAbsoluteUrl(final);
 }
+function mediaType(value2) {
+  return value2?.split(";", 1)[0]?.trim().toLowerCase();
+}
 function compareSnapshots(route, preview, production) {
   const differences = [];
   const path = safeRoutePath(route.path);
@@ -560,8 +563,8 @@ function compareSnapshots(route, preview, production) {
   if (route.expect?.status !== void 0 && preview.status !== route.expect.status) {
     differences.push(difference(path, "DP007", "error", "expect.status", preview.status, route.expect.status, `Preview did not return expected status ${route.expect.status}`));
   }
-  if (route.expect?.contentType && !preview.headers["content-type"]?.includes(route.expect.contentType)) {
-    differences.push(difference(path, "DP008", "error", "expect.contentType", preview.headers["content-type"], route.expect.contentType, `Preview content type did not include ${route.expect.contentType}`));
+  if (route.expect?.contentType && mediaType(preview.headers["content-type"]) !== mediaType(route.expect.contentType)) {
+    differences.push(difference(path, "DP008", "error", "expect.contentType", preview.headers["content-type"], route.expect.contentType, `Preview media type did not match ${route.expect.contentType}`));
   }
   return differences;
 }

@@ -65,4 +65,22 @@ describe("loadConfig", () => {
       await rm(directory, { recursive: true });
     }
   });
+
+  it("rejects empty content type expectations", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "deployproof-config-"));
+    const config = join(directory, "deployproof.config.json");
+    try {
+      await writeFile(config, JSON.stringify({
+        preview: "https://preview.example.com",
+        production: "https://example.com",
+        routes: [{ path: "/health", expect: { contentType: " " } }],
+      }));
+
+      await expect(loadConfig({ ...options, config })).rejects.toThrow(
+        /expected content type must be a non-empty string/,
+      );
+    } finally {
+      await rm(directory, { recursive: true });
+    }
+  });
 });

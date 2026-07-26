@@ -153,4 +153,28 @@ describe("compareSnapshots", () => {
     expect(differences.map((item) => item.id)).toContain("DP007");
     expect(differences.map((item) => item.id)).toContain("DP008");
   });
+
+  it("matches content types by media type instead of substring", () => {
+    const matching = compareSnapshots(
+      { path: "/api", expect: { contentType: "application/json" } },
+      snapshot({ headers: { "content-type": "Application/JSON; charset=utf-8" } }),
+      snapshot({
+        requestedUrl: "https://example.com/docs",
+        finalUrl: "https://example.com/docs",
+        headers: { "content-type": "application/json" },
+      }),
+    );
+    expect(matching).not.toContainEqual(expect.objectContaining({ id: "DP008" }));
+
+    const lookalike = compareSnapshots(
+      { path: "/api", expect: { contentType: "application/json" } },
+      snapshot({ headers: { "content-type": "application/jsonp" } }),
+      snapshot({
+        requestedUrl: "https://example.com/docs",
+        finalUrl: "https://example.com/docs",
+        headers: { "content-type": "application/jsonp" },
+      }),
+    );
+    expect(lookalike).toContainEqual(expect.objectContaining({ id: "DP008" }));
+  });
 });

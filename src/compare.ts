@@ -63,6 +63,10 @@ function comparableFinalTarget(snapshot: Snapshot): string {
   return final.origin === requested.origin ? safePath(final) : safeAbsoluteUrl(final);
 }
 
+function mediaType(value: string | undefined): string | undefined {
+  return value?.split(";", 1)[0]?.trim().toLowerCase();
+}
+
 export function compareSnapshots(route: RouteInput, preview: Snapshot, production: Snapshot): Difference[] {
   const differences: Difference[] = [];
   const path = safeRoutePath(route.path);
@@ -103,8 +107,11 @@ export function compareSnapshots(route: RouteInput, preview: Snapshot, productio
   if (route.expect?.status !== undefined && preview.status !== route.expect.status) {
     differences.push(difference(path, "DP007", "error", "expect.status", preview.status, route.expect.status, `Preview did not return expected status ${route.expect.status}`));
   }
-  if (route.expect?.contentType && !preview.headers["content-type"]?.includes(route.expect.contentType)) {
-    differences.push(difference(path, "DP008", "error", "expect.contentType", preview.headers["content-type"], route.expect.contentType, `Preview content type did not include ${route.expect.contentType}`));
+  if (
+    route.expect?.contentType
+    && mediaType(preview.headers["content-type"]) !== mediaType(route.expect.contentType)
+  ) {
+    differences.push(difference(path, "DP008", "error", "expect.contentType", preview.headers["content-type"], route.expect.contentType, `Preview media type did not match ${route.expect.contentType}`));
   }
 
   return differences;
