@@ -48,6 +48,7 @@ function cookieShapes(headers: Headers): CookieShape[] {
           const attribute = (separator === -1 ? segment : segment.slice(0, separator))
             .trim()
             .toLowerCase();
+          if (attribute === "expires") return "expires";
           if (attribute !== "samesite" || separator === -1) return attribute;
           const mode = segment.slice(separator + 1).trim().toLowerCase();
           return ["lax", "none", "strict"].includes(mode)

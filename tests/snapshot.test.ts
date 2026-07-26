@@ -46,6 +46,36 @@ describe("captureSnapshot", () => {
     expect(result).not.toHaveProperty("body");
   });
 
+  it("normalizes volatile cookie expiration timestamps", async () => {
+    const fetch = vi.fn()
+      .mockResolvedValueOnce(new Response("", {
+        headers: {
+          "set-cookie": "session=preview-secret; Expires=Sun, 26 Jul 2026 16:00:00 GMT; Secure",
+        },
+      }))
+      .mockResolvedValueOnce(new Response("", {
+        headers: {
+          "set-cookie": "session=production-secret; Expires=Sun, 26 Jul 2026 16:00:01 GMT; Secure",
+        },
+      }));
+    vi.stubGlobal("fetch", fetch);
+
+    const options = {
+      timeoutMs: 1000,
+      maxRedirects: 3,
+      maxBodyBytes: 1000,
+      ignoreHeaders: [],
+    };
+    const preview = await captureSnapshot("https://preview.test", { path: "/" }, options);
+    const production = await captureSnapshot("https://production.test", { path: "/" }, options);
+
+    expect(preview.cookies).toEqual([
+      { name: "session", attributes: ["expires", "secure"] },
+    ]);
+    expect(production.cookies).toEqual(preview.cookies);
+    expect(JSON.stringify([preview, production])).not.toContain("16:00:");
+  });
+
   it("normalizes same-origin redirect locations to paths with queries", async () => {
     const fetch = vi.fn()
       .mockResolvedValueOnce(new Response(null, { status: 308, headers: { location: "https://preview.test/new?from=old" } }))

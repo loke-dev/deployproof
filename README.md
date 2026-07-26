@@ -86,9 +86,10 @@ normalized so equivalent header behavior does not create noisy reports.
 
 The Action emits native annotations for each route difference. It compares
 cookie names and security attributes such as `Secure`, `HttpOnly`, and the
-`SameSite` mode, but never exposes cookie values. It runs the reviewed CLI
-bundle from the selected repository tag without downloading executable code
-from npm.
+`SameSite` mode, but never exposes cookie values. Absolute cookie expiration
+timestamps are normalized so equivalent rolling sessions do not create drift;
+the presence of `Expires` is still compared. It runs the reviewed CLI bundle
+from the selected repository tag without downloading executable code from npm.
 
 ## Output formats
 
