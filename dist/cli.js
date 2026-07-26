@@ -602,7 +602,7 @@ async function prove(config) {
         differences: [{
           id: "DP000",
           severity: "error",
-          route: route.path,
+          route: safeRoutePath(route.path),
           field: "request",
           message: failure
         }],

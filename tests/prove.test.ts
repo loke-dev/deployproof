@@ -33,4 +33,28 @@ describe("prove", () => {
     expect(JSON.stringify(result)).not.toContain("super-secret");
     expect(JSON.stringify(result)).not.toContain("route-secret");
   });
+
+  it("fingerprints query values when requests fail", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => {
+      throw new Error("network unavailable");
+    }));
+
+    const result = await prove({
+      preview: "https://preview.example.com",
+      production: "https://example.com",
+      routes: [{
+        path: "/callback?token=failure-secret",
+        method: "GET",
+      }],
+      timeoutMs: 1_000,
+      maxRedirects: 3,
+      maxBodyBytes: 32_000,
+      ignoreHeaders: [],
+    });
+
+    expect(result.routes[0]?.differences[0]?.route).toBe(
+      safeRoutePath("/callback?token=failure-secret"),
+    );
+    expect(JSON.stringify(result)).not.toContain("failure-secret");
+  });
 });
