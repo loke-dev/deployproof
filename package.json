@@ -1,6 +1,6 @@
 {
   "name": "deployproof",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Prove a preview behaves like production before you deploy.",
   "type": "module",
   "bin": {
@@ -20,7 +20,7 @@
     "deploy": "vite build --config site/vite.config.ts && wrangler deploy",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "prepare": "tsup"
+    "prepublishOnly": "pnpm check && git diff --exit-code -- dist"
   },
   "keywords": [
     "deployment",
