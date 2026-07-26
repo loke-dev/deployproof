@@ -647,7 +647,7 @@ function compareSnapshots(route, preview, production) {
   if (route.expect?.status !== void 0 && preview.status !== route.expect.status) {
     differences.push(difference(path, "DP007", "error", "expect.status", preview.status, route.expect.status, `Preview did not return expected status ${route.expect.status}`));
   }
-  if (route.expect?.contentType && mediaType2(preview.headers["content-type"]) !== mediaType2(route.expect.contentType)) {
+  if (route.expect?.contentType && mediaType2(preview.headers["content-type"]) !== mediaType2(route.expect.contentType.toLowerCase())) {
     differences.push(difference(path, "DP008", "error", "expect.contentType", preview.headers["content-type"], route.expect.contentType, `Preview media type did not match ${route.expect.contentType}`));
   }
   return differences;
