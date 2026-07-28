@@ -112,6 +112,32 @@ deployproof --format sarif   # code scanning upload
 Use `--strict` to make warnings fail the check. Errors always fail. Notices
 remain informational.
 
+## Library API
+
+The same bounded comparison engine used by the CLI is available as an ESM
+library:
+
+```ts
+import { prove, type ProofConfig } from "deployproof";
+
+const config: ProofConfig = {
+  preview: "https://my-pr.example.workers.dev",
+  production: "https://example.com",
+  routes: [{ path: "/" }, { path: "/api/health", method: "HEAD" }],
+  timeoutMs: 10_000,
+  maxRedirects: 5,
+  maxBodyBytes: 512_000,
+  ignoreHeaders: [],
+};
+
+const result = await prove(config);
+```
+
+`prove` performs read-only requests and returns structured `ProofResult` data.
+It preserves the CLI's safety properties: bounded response reads and redirects,
+redacted query values, no response bodies, and no cookie or custom-header
+values in results.
+
 ## What DeployProof catches
 
 | ID | Difference | Default severity |

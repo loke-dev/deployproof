@@ -25,6 +25,22 @@ export interface DeployProofConfig {
   ignoreHeaders?: string[];
 }
 
+/**
+ * Fully resolved input accepted by the comparison engine.
+ *
+ * Use this type when embedding DeployProof. The CLI's configuration loader
+ * supplies these values from flags, environment variables, and defaults.
+ */
+export interface ProofConfig {
+  preview: string;
+  production: string;
+  routes: RouteInput[];
+  timeoutMs: number;
+  maxRedirects: number;
+  maxBodyBytes: number;
+  ignoreHeaders: string[];
+}
+
 export interface Options {
   preview?: string;
   production?: string;

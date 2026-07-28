@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 import type {
   DeployProofConfig,
   Options,
+  ProofConfig,
   RouteInput,
   RouteMethod,
 } from "./types.js";
@@ -144,10 +145,7 @@ async function findConfig(explicit?: string): Promise<string | undefined> {
   return undefined;
 }
 
-export async function loadConfig(options: Options): Promise<Required<Omit<DeployProofConfig, "preview" | "production">> & {
-  preview: string;
-  production: string;
-}> {
+export async function loadConfig(options: Options): Promise<ProofConfig> {
   const configPath = await findConfig(options.config);
   let fileConfig: DeployProofConfig = {};
   if (configPath) {

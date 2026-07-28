@@ -1,8 +1,17 @@
 {
   "name": "deployproof",
-  "version": "0.1.5",
+  "version": "0.2.0",
   "description": "Prove a preview behaves like production before you deploy.",
   "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
   "bin": {
     "deployproof": "dist/cli.js"
   },

@@ -1,12 +1,7 @@
 import { captureSnapshot } from "./snapshot.js";
 import { compareSnapshots } from "./compare.js";
-import type { DeployProofConfig, ProofResult, RouteInput, RouteResult } from "./types.js";
+import type { ProofConfig, ProofResult, RouteInput, RouteResult } from "./types.js";
 import { redactUrlsInText, safeRoutePath } from "./url.js";
-
-type ResolvedConfig = Required<Omit<DeployProofConfig, "preview" | "production">> & {
-  preview: string;
-  production: string;
-};
 
 function errorMessage(value: unknown): string {
   return redactUrlsInText(value instanceof Error ? value.message : String(value));
@@ -21,7 +16,7 @@ function reportRoute(route: RouteInput): RouteResult["route"] {
   };
 }
 
-export async function prove(config: ResolvedConfig): Promise<ProofResult> {
+export async function prove(config: ProofConfig): Promise<ProofResult> {
   const requestOptions = {
     timeoutMs: config.timeoutMs,
     maxRedirects: config.maxRedirects,
