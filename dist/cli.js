@@ -341,6 +341,18 @@ function safeAbsoluteUrl(url) {
 function safeRoutePath(path) {
   return safePath(new URL(path, "https://deployproof.invalid"));
 }
+function redactUrlsInText(value2) {
+  return value2.replace(/https?:\/\/[^\s<>"']+/gi, (candidate) => {
+    const match = /^(.*?)([),.;!?]*)$/.exec(candidate);
+    const urlValue = match?.[1] ?? candidate;
+    const trailing = match?.[2] ?? "";
+    try {
+      return `${safeAbsoluteUrl(new URL(urlValue))}${trailing}`;
+    } catch {
+      return `[redacted URL]${trailing}`;
+    }
+  });
+}
 
 // src/snapshot.ts
 var COMPARED_HEADERS = [
@@ -655,7 +667,7 @@ function compareSnapshots(route, preview, production) {
 
 // src/prove.ts
 function errorMessage(value2) {
-  return value2 instanceof Error ? value2.message : String(value2);
+  return redactUrlsInText(value2 instanceof Error ? value2.message : String(value2));
 }
 function reportRoute(route) {
   const { headers, ...safe } = route;

@@ -26,3 +26,17 @@ export function safeAbsoluteUrl(url: URL): string {
 export function safeRoutePath(path: string): string {
   return safePath(new URL(path, "https://deployproof.invalid"));
 }
+
+export function redactUrlsInText(value: string): string {
+  return value.replace(/https?:\/\/[^\s<>"']+/gi, (candidate) => {
+    const match = /^(.*?)([),.;!?]*)$/.exec(candidate);
+    const urlValue = match?.[1] ?? candidate;
+    const trailing = match?.[2] ?? "";
+
+    try {
+      return `${safeAbsoluteUrl(new URL(urlValue))}${trailing}`;
+    } catch {
+      return `[redacted URL]${trailing}`;
+    }
+  });
+}

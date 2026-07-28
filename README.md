@@ -17,7 +17,8 @@ cookie values, or custom request-header values.
 Custom request headers are sent only to the selected base origin and its
 same-origin redirects. DeployProof drops them if a redirect leaves that origin.
 Query-string values are represented by deterministic fingerprints in reports,
-so differences remain detectable without printing the original values.
+including URLs surfaced by network errors, so differences remain detectable
+without printing the original values.
 
 ## Quick start
 

@@ -36,7 +36,9 @@ describe("prove", () => {
 
   it("fingerprints query values when requests fail", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => {
-      throw new Error("network unavailable");
+      throw new Error(
+        "network unavailable for https://preview.example.com/callback?token=failure-secret",
+      );
     }));
 
     const result = await prove({
@@ -54,6 +56,9 @@ describe("prove", () => {
 
     expect(result.routes[0]?.differences[0]?.route).toBe(
       safeRoutePath("/callback?token=failure-secret"),
+    );
+    expect(result.routes[0]?.error).toContain(
+      "https://preview.example.com/callback?token=sha256%3A",
     );
     expect(JSON.stringify(result)).not.toContain("failure-secret");
   });
