@@ -86,7 +86,7 @@ HTML attribute values.
 ## GitHub Action
 
 ```yaml
-- uses: loke-dev/deployproof@v0.1.5
+- uses: loke-dev/deployproof@v0.2.0
   with:
     preview: ${{ steps.deploy.outputs.deployment-url }}
     production: https://example.com
