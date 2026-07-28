@@ -1,0 +1,29 @@
+name: DeployProof
+
+on:
+  deployment_status:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deployproof-${{ github.event.deployment.id }}
+  cancel-in-progress: true
+
+jobs:
+  compare:
+    if: >-
+      github.event.deployment_status.state == 'success' &&
+      github.event.deployment_status.environment_url != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.deployment.sha }}
+      - uses: loke-dev/deployproof@v0.2.0
+        with:
+          preview: ${{ github.event.deployment_status.environment_url }}
+          production: ${{ vars.PRODUCTION_URL }}
+          config: deployproof.config.json
+          strict: true

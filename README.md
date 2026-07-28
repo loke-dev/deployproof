@@ -100,6 +100,27 @@ timestamps are normalized so equivalent rolling sessions do not create drift;
 the presence of `Expires` is still compared. It runs the reviewed CLI bundle
 from the selected repository tag without downloading executable code from npm.
 
+Routes can be supplied without a configuration file:
+
+```yaml
+- uses: loke-dev/deployproof@v0.2.0
+  with:
+    preview: ${{ steps.deploy.outputs.deployment-url }}
+    production: https://example.com
+    routes: |
+      /
+      /docs
+      /api/health
+    timeout: "10000"
+    strict: true
+```
+
+See the [integration guide](docs/integrations.md) and ready-to-adapt workflow
+recipes for [GitHub deployments](examples/github-actions/deployment-status.yml),
+[Vercel](examples/github-actions/vercel.yml),
+[Cloudflare](examples/github-actions/cloudflare.yml), and
+[Netlify](examples/github-actions/netlify.yml).
+
 ## Output formats
 
 ```bash

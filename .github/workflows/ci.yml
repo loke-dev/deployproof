@@ -40,6 +40,10 @@ jobs:
         with:
           preview: https://deployproof.loke.dev
           production: https://deployproof.loke.dev
+          routes: |
+            /
+            /404.html
+          timeout: "10000"
           strict: true
       - name: Reject invalid Action strict input
         id: invalid-strict

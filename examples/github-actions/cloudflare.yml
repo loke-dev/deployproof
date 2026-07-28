@@ -1,0 +1,40 @@
+name: Cloudflare preview parity
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cloudflare-preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Deploy the preview
+        id: deploy
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: >-
+            pages deploy dist
+            --project-name=YOUR_PROJECT_NAME
+            --branch=${{ github.head_ref }}
+      - uses: loke-dev/deployproof@v0.2.0
+        with:
+          preview: ${{ steps.deploy.outputs.deployment-url }}
+          production: ${{ vars.PRODUCTION_URL }}
+          config: deployproof.config.json
+          strict: true

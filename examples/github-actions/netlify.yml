@@ -1,0 +1,48 @@
+name: Netlify preview parity
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: netlify-preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Deploy the preview
+        id: deploy
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+        run: |
+          npx netlify-cli@27.0.1 deploy \
+            --build \
+            --context deploy-preview \
+            --json \
+            --auth "$NETLIFY_AUTH_TOKEN" \
+            --site "$NETLIFY_SITE_ID" > "$RUNNER_TEMP/netlify-deploy.json"
+          node --input-type=module -e '
+            import { readFileSync, appendFileSync } from "node:fs";
+            const result = JSON.parse(readFileSync(process.env.RUNNER_TEMP + "/netlify-deploy.json", "utf8"));
+            const url = new URL(result.deploy_url);
+            if (url.protocol !== "https:") throw new Error("Netlify returned a non-HTTPS deployment URL");
+            appendFileSync(process.env.GITHUB_OUTPUT, `url=${url.href}\n`);
+          '
+      - uses: loke-dev/deployproof@v0.2.0
+        with:
+          preview: ${{ steps.deploy.outputs.url }}
+          production: ${{ vars.PRODUCTION_URL }}
+          config: deployproof.config.json
+          strict: true

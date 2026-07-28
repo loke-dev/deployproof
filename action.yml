@@ -15,6 +15,14 @@ inputs:
     description: Path to a DeployProof config file
     required: false
     default: ""
+  routes:
+    description: Newline-separated routes to compare in addition to the config file
+    required: false
+    default: ""
+  timeout:
+    description: Optional per-request timeout in milliseconds
+    required: false
+    default: ""
   strict:
     description: Boolean string; true fails when warnings are found
     required: false
@@ -33,12 +41,22 @@ runs:
         DEPLOYPROOF_PREVIEW: ${{ inputs.preview }}
         DEPLOYPROOF_PRODUCTION: ${{ inputs.production }}
         DEPLOYPROOF_CONFIG: ${{ inputs.config }}
+        DEPLOYPROOF_ROUTES: ${{ inputs.routes }}
+        DEPLOYPROOF_TIMEOUT: ${{ inputs.timeout }}
         DEPLOYPROOF_STRICT: ${{ inputs.strict }}
       run: |
         set -euo pipefail
         args=("--format" "github")
         if [[ -n "$DEPLOYPROOF_CONFIG" ]]; then
           args+=("--config" "$DEPLOYPROOF_CONFIG")
+        fi
+        while IFS= read -r route || [[ -n "$route" ]]; do
+          if [[ -n "$route" ]]; then
+            args+=("--route" "$route")
+          fi
+        done <<< "$DEPLOYPROOF_ROUTES"
+        if [[ -n "$DEPLOYPROOF_TIMEOUT" ]]; then
+          args+=("--timeout" "$DEPLOYPROOF_TIMEOUT")
         fi
         case "$DEPLOYPROOF_STRICT" in
           true) args+=("--strict") ;;
