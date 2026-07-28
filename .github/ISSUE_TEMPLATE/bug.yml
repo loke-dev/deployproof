@@ -1,0 +1,56 @@
+name: Bug report
+description: Report incorrect, unsafe, or unexpected DeployProof behavior
+title: "bug: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not include credentials, private URLs, cookie values, response bodies, or custom header values. Use private vulnerability reporting for security issues.
+  - type: input
+    id: version
+    attributes:
+      label: DeployProof version
+      placeholder: 0.2.0
+    validations:
+      required: true
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Surface
+      options:
+        - CLI
+        - GitHub Action
+        - Library API
+        - Documentation or website
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal redacted reproduction
+      description: Include commands or configuration only after replacing sensitive values.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety check
+      options:
+        - label: I removed secrets, private URLs, response bodies, cookie values, and custom header values.
+          required: true
+        - label: This is not a vulnerability report.
+          required: true
