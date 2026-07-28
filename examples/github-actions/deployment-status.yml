@@ -21,7 +21,7 @@ jobs:
       - uses: actions/checkout@v6
         with:
           ref: ${{ github.event.deployment.sha }}
-      - uses: loke-dev/deployproof@v0.2.0
+      - uses: loke-dev/deployproof@v0.3.0
         with:
           preview: ${{ github.event.deployment_status.environment_url }}
           production: ${{ vars.PRODUCTION_URL }}

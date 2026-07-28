@@ -86,7 +86,7 @@ HTML attribute values.
 ## GitHub Action
 
 ```yaml
-- uses: loke-dev/deployproof@v0.2.0
+- uses: loke-dev/deployproof@v0.3.0
   with:
     preview: ${{ steps.deploy.outputs.deployment-url }}
     production: https://example.com
@@ -103,7 +103,7 @@ from the selected repository tag without downloading executable code from npm.
 Routes can be supplied without a configuration file:
 
 ```yaml
-- uses: loke-dev/deployproof@v0.2.0
+- uses: loke-dev/deployproof@v0.3.0
   with:
     preview: ${{ steps.deploy.outputs.deployment-url }}
     production: https://example.com

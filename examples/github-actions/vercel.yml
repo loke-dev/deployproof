@@ -40,7 +40,7 @@ jobs:
         run: |
           preview_url="$(npx vercel@58.1.0 deploy --prebuilt --token "$VERCEL_TOKEN")"
           printf 'url=%s\n' "$preview_url" >> "$GITHUB_OUTPUT"
-      - uses: loke-dev/deployproof@v0.2.0
+      - uses: loke-dev/deployproof@v0.3.0
         with:
           preview: ${{ steps.deploy.outputs.url }}
           production: ${{ vars.PRODUCTION_URL }}

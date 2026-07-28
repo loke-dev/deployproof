@@ -32,7 +32,7 @@ jobs:
             pages deploy dist
             --project-name=YOUR_PROJECT_NAME
             --branch=${{ github.head_ref }}
-      - uses: loke-dev/deployproof@v0.2.0
+      - uses: loke-dev/deployproof@v0.3.0
         with:
           preview: ${{ steps.deploy.outputs.deployment-url }}
           production: ${{ vars.PRODUCTION_URL }}
