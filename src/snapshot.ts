@@ -40,8 +40,38 @@ function selectedHeaders(headers: Headers, ignored: string[]): Record<string, st
   );
 }
 
+function splitCombinedSetCookie(value: string): string[] {
+  const values: string[] = [];
+  let start = 0;
+  let quoted = false;
+  for (let index = 0; index < value.length; index += 1) {
+    if (value[index] === '"') {
+      let backslashes = 0;
+      for (let cursor = index - 1; cursor >= 0 && value[cursor] === "\\"; cursor -= 1) {
+        backslashes += 1;
+      }
+      if (backslashes % 2 === 0) quoted = !quoted;
+      continue;
+    }
+    if (value[index] === "," && !quoted && /^\s*[^;,=\s]+=[^;,]*/.test(value.slice(index + 1))) {
+      values.push(value.slice(start, index).trim());
+      start = index + 1;
+    }
+  }
+  values.push(value.slice(start).trim());
+  return values.filter(Boolean);
+}
+
+function cookieValues(headers: Headers): string[] {
+  if (typeof headers.getSetCookie === "function") {
+    const values = headers.getSetCookie();
+    if (values.length > 0) return values;
+  }
+  return splitCombinedSetCookie(headers.get("set-cookie") ?? "");
+}
+
 function cookieShapes(headers: Headers): CookieShape[] {
-  const values = typeof headers.getSetCookie === "function" ? headers.getSetCookie() : [];
+  const values = cookieValues(headers);
   return values
     .map((value) => {
       const segments = value.split(";").map((segment) => segment.trim());

@@ -79,6 +79,29 @@ describe("captureSnapshot", () => {
     expect(JSON.stringify([preview, production])).not.toContain("16:00:");
   });
 
+  it("reads combined cookies when getSetCookie is unavailable", async () => {
+    const response = new Response("", {
+      headers: {
+        "set-cookie": "session=preview-secret; Expires=Sun, 26 Jul 2026 16:00:00 GMT; Secure, theme=dark; SameSite=Strict",
+      },
+    });
+    Object.defineProperty(response.headers, "getSetCookie", { value: undefined });
+    vi.stubGlobal("fetch", vi.fn(async () => response));
+
+    const result = await captureSnapshot("https://preview.test", { path: "/" }, {
+      timeoutMs: 1000,
+      maxRedirects: 3,
+      maxBodyBytes: 1000,
+      ignoreHeaders: [],
+    });
+
+    expect(result.cookies).toEqual([
+      { name: "session", attributes: ["expires", "secure"] },
+      { name: "theme", attributes: ["samesite=strict"] },
+    ]);
+    expect(JSON.stringify(result)).not.toContain("preview-secret");
+  });
+
   it("normalizes same-origin redirect locations to paths with queries", async () => {
     const fetch = vi.fn()
       .mockResolvedValueOnce(new Response(null, { status: 308, headers: { location: "https://preview.test/new?from=old" } }))

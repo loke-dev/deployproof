@@ -387,8 +387,36 @@ function selectedHeaders(headers, ignored) {
     COMPARED_HEADERS.filter((name) => !ignored.includes(name)).map((name) => [name, headers.get(name)]).filter((entry) => entry[1] !== null)
   );
 }
+function splitCombinedSetCookie(value2) {
+  const values = [];
+  let start = 0;
+  let quoted = false;
+  for (let index = 0; index < value2.length; index += 1) {
+    if (value2[index] === '"') {
+      let backslashes = 0;
+      for (let cursor = index - 1; cursor >= 0 && value2[cursor] === "\\"; cursor -= 1) {
+        backslashes += 1;
+      }
+      if (backslashes % 2 === 0) quoted = !quoted;
+      continue;
+    }
+    if (value2[index] === "," && !quoted && /^\s*[^;,=\s]+=[^;,]*/.test(value2.slice(index + 1))) {
+      values.push(value2.slice(start, index).trim());
+      start = index + 1;
+    }
+  }
+  values.push(value2.slice(start).trim());
+  return values.filter(Boolean);
+}
+function cookieValues(headers) {
+  if (typeof headers.getSetCookie === "function") {
+    const values = headers.getSetCookie();
+    if (values.length > 0) return values;
+  }
+  return splitCombinedSetCookie(headers.get("set-cookie") ?? "");
+}
 function cookieShapes(headers) {
-  const values = typeof headers.getSetCookie === "function" ? headers.getSetCookie() : [];
+  const values = cookieValues(headers);
   return values.map((value2) => {
     const segments = value2.split(";").map((segment) => segment.trim());
     const name = segments.shift()?.split("=", 1)[0]?.trim();
