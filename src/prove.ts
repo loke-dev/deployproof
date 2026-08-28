@@ -1,7 +1,7 @@
 import { captureSnapshot } from "./snapshot.js";
 import { compareSnapshots } from "./compare.js";
 import type { ProofConfig, ProofResult, RouteInput, RouteResult } from "./types.js";
-import { redactUrlsInText, safeRoutePath } from "./url.js";
+import { redactUrlsInText, safeAbsoluteUrl, safeRoutePath } from "./url.js";
 
 function errorMessage(value: unknown): string {
   return redactUrlsInText(value instanceof Error ? value.message : String(value));
@@ -14,6 +14,14 @@ function reportRoute(route: RouteInput): RouteResult["route"] {
     path: safeRoutePath(route.path),
     ...(headers ? { headerNames: Object.keys(headers).map((name) => name.toLowerCase()).sort() } : {}),
   };
+}
+
+function reportBase(value: string): string {
+  try {
+    return safeAbsoluteUrl(new URL(value));
+  } catch {
+    return "[invalid URL]";
+  }
 }
 
 export async function prove(config: ProofConfig): Promise<ProofResult> {
@@ -59,8 +67,8 @@ export async function prove(config: ProofConfig): Promise<ProofResult> {
 
   const all = routes.flatMap((route) => route.differences);
   return {
-    previewBase: config.preview,
-    productionBase: config.production,
+    previewBase: reportBase(config.preview),
+    productionBase: reportBase(config.production),
     generatedAt: new Date().toISOString(),
     routes,
     summary: {

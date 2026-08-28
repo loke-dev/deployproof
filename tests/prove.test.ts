@@ -1,10 +1,36 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { prove } from "../src/prove.js";
-import { safeRoutePath } from "../src/url.js";
+import { safeAbsoluteUrl, safeRoutePath } from "../src/url.js";
 
 afterEach(() => vi.unstubAllGlobals());
 
 describe("prove", () => {
+  it("redacts query values in base URLs returned by the library", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(
+      "<title>Equivalent</title>",
+      { status: 200, headers: { "content-type": "text/html" } },
+    )));
+
+    const result = await prove({
+      preview: "https://preview.example.com?token=preview-secret",
+      production: "https://example.com?token=production-secret",
+      routes: [{ path: "/" }],
+      timeoutMs: 1_000,
+      maxRedirects: 3,
+      maxBodyBytes: 32_000,
+      ignoreHeaders: [],
+    });
+
+    expect(result.previewBase).toBe(
+      safeAbsoluteUrl(new URL("https://preview.example.com/?token=preview-secret")),
+    );
+    expect(result.productionBase).toBe(
+      safeAbsoluteUrl(new URL("https://example.com/?token=production-secret")),
+    );
+    expect(JSON.stringify(result)).not.toContain("preview-secret");
+    expect(JSON.stringify(result)).not.toContain("production-secret");
+  });
+
   it("never includes custom request-header values in reports", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => new Response(
       "<title>Equivalent</title>",

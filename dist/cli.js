@@ -705,6 +705,13 @@ function reportRoute(route) {
     ...headers ? { headerNames: Object.keys(headers).map((name) => name.toLowerCase()).sort() } : {}
   };
 }
+function reportBase(value2) {
+  try {
+    return safeAbsoluteUrl(new URL(value2));
+  } catch {
+    return "[invalid URL]";
+  }
+}
 async function prove(config) {
   const requestOptions = {
     timeoutMs: config.timeoutMs,
@@ -746,8 +753,8 @@ async function prove(config) {
   }
   const all = routes.flatMap((route) => route.differences);
   return {
-    previewBase: config.preview,
-    productionBase: config.production,
+    previewBase: reportBase(config.preview),
+    productionBase: reportBase(config.production),
     generatedAt: (/* @__PURE__ */ new Date()).toISOString(),
     routes,
     summary: {
