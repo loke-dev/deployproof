@@ -280,6 +280,26 @@ describe("captureSnapshot", () => {
     expect(result.requestedUrl).not.toContain("top-secret");
   });
 
+  it("does not duplicate a trailing slash in library base URLs", async () => {
+    const fetch = vi.fn(async () => new Response("", {
+      status: 200,
+      headers: { "content-type": "text/plain" },
+    }));
+    vi.stubGlobal("fetch", fetch);
+
+    await captureSnapshot("https://preview.test/", { path: "/health" }, {
+      timeoutMs: 1000,
+      maxRedirects: 3,
+      maxBodyBytes: 1000,
+      ignoreHeaders: [],
+    });
+
+    expect(fetch).toHaveBeenCalledWith(
+      "https://preview.test/health",
+      expect.any(Object),
+    );
+  });
+
   it("keeps the origin and drops custom headers for cross-origin redirects", async () => {
     const fetch = vi.fn()
       .mockResolvedValueOnce(new Response(null, {
