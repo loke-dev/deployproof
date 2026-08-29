@@ -168,6 +168,30 @@ describe("loadConfig", () => {
     }
   });
 
+  it("redacts route query values from validation errors", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "deployproof-config-"));
+    const config = join(directory, "deployproof.config.json");
+    try {
+      await writeFile(config, JSON.stringify({
+        preview: "https://preview.example.com",
+        production: "https://example.com",
+        routes: [{
+          path: "/health?token=route-secret",
+          method: "POST",
+        }],
+      }));
+
+      await expect(loadConfig({ ...options, config })).rejects.toThrow(
+        /Route \/health\?token=sha256%3A/,
+      );
+      await expect(loadConfig({ ...options, config })).rejects.not.toThrow(
+        /route-secret/,
+      );
+    } finally {
+      await rm(directory, { recursive: true });
+    }
+  });
+
   it("rejects empty content type expectations", async () => {
     const directory = await mkdtemp(join(tmpdir(), "deployproof-config-"));
     const config = join(directory, "deployproof.config.json");

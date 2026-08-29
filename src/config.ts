@@ -7,8 +7,17 @@ import type {
   RouteInput,
   RouteMethod,
 } from "./types.js";
+import { safeRoutePath } from "./url.js";
 
 const DEFAULT_FILES = ["deployproof.config.json", "deployproof.json"];
+
+function routeLabel(path: string): string {
+  try {
+    return safeRoutePath(path);
+  } catch {
+    return "[invalid route]";
+  }
+}
 
 function normalizeBase(value: string, name: string): string {
   let url: URL;
@@ -29,38 +38,39 @@ function normalizeRoute(route: string | RouteInput): RouteInput {
   const input: unknown = typeof route === "string" ? { path: route } : route;
   if (!isRecord(input)) throw new Error("Every route must be a path string or object");
   if (typeof input.path !== "string" || !input.path) throw new Error("Every route needs a path");
+  const label = routeLabel(input.path);
   let method: RouteMethod = "GET";
   if (input.method !== undefined) {
     if (typeof input.method !== "string") {
-      throw new Error(`Route ${input.path} has an unsupported method`);
+      throw new Error(`Route ${label} has an unsupported method`);
     }
     const normalizedMethod = input.method.toUpperCase();
     if (normalizedMethod !== "GET" && normalizedMethod !== "HEAD") {
-      throw new Error(`Route ${input.path} has an unsupported method`);
+      throw new Error(`Route ${label} has an unsupported method`);
     }
     method = normalizedMethod as RouteMethod;
   }
   let headers: Record<string, string> | undefined;
   if (input.headers !== undefined) {
     if (!isRecord(input.headers)) {
-      throw new Error(`Route ${input.path} headers must be an object`);
+      throw new Error(`Route ${label} headers must be an object`);
     }
     headers = {};
     for (const [name, value] of Object.entries(input.headers)) {
       if (typeof value !== "string") {
-        throw new Error(`Route ${input.path} headers must be string values`);
+        throw new Error(`Route ${label} headers must be string values`);
       }
       try {
         new Headers([[name, value]]);
       } catch {
-        throw new Error(`Route ${input.path} has an invalid header named "${name}"`);
+        throw new Error(`Route ${label} has an invalid header named "${name}"`);
       }
       headers[name] = value;
     }
   }
   let expect: RouteInput["expect"];
   if (input.expect !== undefined) {
-    if (!isRecord(input.expect)) throw new Error(`Route ${input.path} expect must be an object`);
+    if (!isRecord(input.expect)) throw new Error(`Route ${label} expect must be an object`);
     const status = input.expect.status;
     const contentType = input.expect.contentType;
     if (status !== undefined && (
@@ -69,21 +79,26 @@ function normalizeRoute(route: string | RouteInput): RouteInput {
       || status < 100
       || status > 599
     )) {
-      throw new Error(`Route ${input.path} expected status must be between 100 and 599`);
+      throw new Error(`Route ${label} expected status must be between 100 and 599`);
     }
     if (contentType !== undefined && (
       typeof contentType !== "string"
       || contentType.trim().length === 0
     )) {
-      throw new Error(`Route ${input.path} expected content type must be a non-empty string`);
+      throw new Error(`Route ${label} expected content type must be a non-empty string`);
     }
     expect = {
       ...(status !== undefined ? { status } : {}),
       ...(contentType !== undefined ? { contentType: contentType.trim() } : {}),
     };
   }
-  const url = new URL(input.path, "https://deployproof.invalid");
-  if (url.origin !== "https://deployproof.invalid") throw new Error(`Route must be relative: ${input.path}`);
+  let url: URL;
+  try {
+    url = new URL(input.path, "https://deployproof.invalid");
+  } catch {
+    throw new Error(`Route must be relative: ${label}`);
+  }
+  if (url.origin !== "https://deployproof.invalid") throw new Error(`Route must be relative: ${label}`);
   return {
     path: `${url.pathname}${url.search}`,
     method,
