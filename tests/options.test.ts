@@ -8,6 +8,24 @@ describe("parseOptions", () => {
     expect(options.preview).toBe("https://preview.test");
   });
 
+  it("accepts equals syntax for value options", () => {
+    const options = parseOptions([
+      "--preview=https://preview.test/?token=redacted",
+      "--production=https://prod.test",
+      "--config=deployproof.config.json",
+      "--route=/one",
+      "--format=json",
+      "--timeout=250",
+    ]);
+
+    expect(options.preview).toBe("https://preview.test/?token=redacted");
+    expect(options.production).toBe("https://prod.test");
+    expect(options.config).toBe("deployproof.config.json");
+    expect(options.routes).toEqual(["/one"]);
+    expect(options.format).toBe("json");
+    expect(options.timeoutMs).toBe(250);
+  });
+
   it("validates output formats", () => {
     expect(() => parseOptions(["--format", "xml"])).toThrow(UsageError);
   });
@@ -16,4 +34,3 @@ describe("parseOptions", () => {
     expect(() => parseOptions(["--timeout", "20"])).toThrow("at least 100ms");
   });
 });
-

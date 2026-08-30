@@ -336,31 +336,35 @@ function parseOptions(argv) {
   };
   for (let index = 0; index < argv.length; index += 1) {
     const value2 = argv[index];
+    const equalsIndex = value2.indexOf("=");
+    const option = equalsIndex > 0 ? value2.slice(0, equalsIndex) : value2;
+    let inlineValue = equalsIndex > 0 ? value2.slice(equalsIndex + 1) : void 0;
     const next = () => {
-      const candidate = argv[index + 1];
+      const candidate = inlineValue ?? argv[index + 1];
       if (!candidate || candidate.startsWith("-")) throw new UsageError(`Missing value for ${value2}`);
-      index += 1;
+      if (inlineValue === void 0) index += 1;
+      inlineValue = void 0;
       return candidate;
     };
-    if (value2 === "-h" || value2 === "--help") options.help = true;
-    else if (value2 === "-v" || value2 === "--version") options.version = true;
-    else if (value2 === "-p" || value2 === "--preview") options.preview = next();
-    else if (value2 === "-P" || value2 === "--production") options.production = next();
-    else if (value2 === "-c" || value2 === "--config") options.config = next();
-    else if (value2 === "-r" || value2 === "--route") options.routes.push(next());
-    else if (value2 === "-f" || value2 === "--format") {
+    if (option === "-h" || option === "--help") options.help = true;
+    else if (option === "-v" || option === "--version") options.version = true;
+    else if (option === "-p" || option === "--preview") options.preview = next();
+    else if (option === "-P" || option === "--production") options.production = next();
+    else if (option === "-c" || option === "--config") options.config = next();
+    else if (option === "-r" || option === "--route") options.routes.push(next());
+    else if (option === "-f" || option === "--format") {
       const format = next();
       if (!["human", "json", "github", "sarif"].includes(format)) {
         throw new UsageError(`Unsupported format: ${format}`);
       }
       options.format = format;
-    } else if (value2 === "--timeout") {
+    } else if (option === "--timeout") {
       const timeout = Number(next());
       if (!Number.isInteger(timeout) || timeout < 100) throw new UsageError("Timeout must be at least 100ms");
       options.timeoutMs = timeout;
-    } else if (value2 === "--strict") options.strict = true;
-    else if (value2 === "--no-strict") options.strict = false;
-    else if (value2.startsWith("-")) throw new UsageError(`Unknown option: ${value2}`);
+    } else if (option === "--strict") options.strict = true;
+    else if (option === "--no-strict") options.strict = false;
+    else if (option.startsWith("-")) throw new UsageError(`Unknown option: ${value2}`);
     else options.routes.push(value2);
   }
   return options;

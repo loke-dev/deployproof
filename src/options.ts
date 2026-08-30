@@ -29,32 +29,36 @@ export function parseOptions(argv: string[]): Options & { help?: boolean; versio
 
   for (let index = 0; index < argv.length; index += 1) {
     const value = argv[index]!;
+    const equalsIndex = value.indexOf("=");
+    const option = equalsIndex > 0 ? value.slice(0, equalsIndex) : value;
+    let inlineValue = equalsIndex > 0 ? value.slice(equalsIndex + 1) : undefined;
     const next = () => {
-      const candidate = argv[index + 1];
+      const candidate = inlineValue ?? argv[index + 1];
       if (!candidate || candidate.startsWith("-")) throw new UsageError(`Missing value for ${value}`);
-      index += 1;
+      if (inlineValue === undefined) index += 1;
+      inlineValue = undefined;
       return candidate;
     };
 
-    if (value === "-h" || value === "--help") options.help = true;
-    else if (value === "-v" || value === "--version") options.version = true;
-    else if (value === "-p" || value === "--preview") options.preview = next();
-    else if (value === "-P" || value === "--production") options.production = next();
-    else if (value === "-c" || value === "--config") options.config = next();
-    else if (value === "-r" || value === "--route") options.routes.push(next());
-    else if (value === "-f" || value === "--format") {
+    if (option === "-h" || option === "--help") options.help = true;
+    else if (option === "-v" || option === "--version") options.version = true;
+    else if (option === "-p" || option === "--preview") options.preview = next();
+    else if (option === "-P" || option === "--production") options.production = next();
+    else if (option === "-c" || option === "--config") options.config = next();
+    else if (option === "-r" || option === "--route") options.routes.push(next());
+    else if (option === "-f" || option === "--format") {
       const format = next();
       if (!["human", "json", "github", "sarif"].includes(format)) {
         throw new UsageError(`Unsupported format: ${format}`);
       }
       options.format = format as OutputFormat;
-    } else if (value === "--timeout") {
+    } else if (option === "--timeout") {
       const timeout = Number(next());
       if (!Number.isInteger(timeout) || timeout < 100) throw new UsageError("Timeout must be at least 100ms");
       options.timeoutMs = timeout;
-    } else if (value === "--strict") options.strict = true;
-    else if (value === "--no-strict") options.strict = false;
-    else if (value.startsWith("-")) throw new UsageError(`Unknown option: ${value}`);
+    } else if (option === "--strict") options.strict = true;
+    else if (option === "--no-strict") options.strict = false;
+    else if (option.startsWith("-")) throw new UsageError(`Unknown option: ${value}`);
     else options.routes.push(value);
   }
 
@@ -64,4 +68,3 @@ export function parseOptions(argv: string[]): Options & { help?: boolean; versio
 export function helpText(): string {
   return help;
 }
-
