@@ -300,6 +300,30 @@ describe("captureSnapshot", () => {
     );
   });
 
+  it("normalizes query and fragment components in library base URLs", async () => {
+    const fetch = vi.fn(async () => new Response("", {
+      status: 200,
+      headers: { "content-type": "text/plain" },
+    }));
+    vi.stubGlobal("fetch", fetch);
+
+    await captureSnapshot(
+      "https://preview.test/deployments/123?token=top-secret#preview",
+      { path: "/health" },
+      {
+        timeoutMs: 1000,
+        maxRedirects: 3,
+        maxBodyBytes: 1000,
+        ignoreHeaders: [],
+      },
+    );
+
+    expect(fetch).toHaveBeenCalledWith(
+      "https://preview.test/deployments/123/health",
+      expect.any(Object),
+    );
+  });
+
   it("keeps the origin and drops custom headers for cross-origin redirects", async () => {
     const fetch = vi.fn()
       .mockResolvedValueOnce(new Response(null, {

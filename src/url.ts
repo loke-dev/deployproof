@@ -1,5 +1,20 @@
 import { createHash } from "node:crypto";
 
+export function normalizeBase(value: string, name: string): string {
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    throw new Error(`${name} must be an absolute URL`);
+  }
+  if (!["http:", "https:"].includes(url.protocol)) throw new Error(`${name} must use http or https`);
+  if (url.username || url.password) throw new Error(`${name} must not include URL credentials`);
+  url.pathname = url.pathname.replace(/\/+$/, "");
+  url.search = "";
+  url.hash = "";
+  return url.toString().replace(/\/$/, "");
+}
+
 function fingerprint(value: string): string {
   return `sha256:${createHash("sha256").update(value).digest("hex").slice(0, 12)}`;
 }

@@ -7,7 +7,7 @@ import type {
   RouteInput,
   RouteMethod,
 } from "./types.js";
-import { safeRoutePath } from "./url.js";
+import { normalizeBase, safeRoutePath } from "./url.js";
 
 const DEFAULT_FILES = ["deployproof.config.json", "deployproof.json"];
 
@@ -17,21 +17,6 @@ function routeLabel(path: string): string {
   } catch {
     return "[invalid route]";
   }
-}
-
-function normalizeBase(value: string, name: string): string {
-  let url: URL;
-  try {
-    url = new URL(value);
-  } catch {
-    throw new Error(`${name} must be an absolute URL`);
-  }
-  if (!["http:", "https:"].includes(url.protocol)) throw new Error(`${name} must use http or https`);
-  if (url.username || url.password) throw new Error(`${name} must not include URL credentials`);
-  url.pathname = url.pathname.replace(/\/+$/, "");
-  url.search = "";
-  url.hash = "";
-  return url.toString().replace(/\/$/, "");
 }
 
 function normalizeRoute(route: string | RouteInput): RouteInput {

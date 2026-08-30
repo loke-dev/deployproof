@@ -112,6 +112,20 @@ import { resolve } from "path";
 
 // src/url.ts
 import { createHash } from "crypto";
+function normalizeBase(value2, name) {
+  let url;
+  try {
+    url = new URL(value2);
+  } catch {
+    throw new Error(`${name} must be an absolute URL`);
+  }
+  if (!["http:", "https:"].includes(url.protocol)) throw new Error(`${name} must use http or https`);
+  if (url.username || url.password) throw new Error(`${name} must not include URL credentials`);
+  url.pathname = url.pathname.replace(/\/+$/, "");
+  url.search = "";
+  url.hash = "";
+  return url.toString().replace(/\/$/, "");
+}
 function fingerprint(value2) {
   return `sha256:${createHash("sha256").update(value2).digest("hex").slice(0, 12)}`;
 }
@@ -152,20 +166,6 @@ function routeLabel(path) {
   } catch {
     return "[invalid route]";
   }
-}
-function normalizeBase(value2, name) {
-  let url;
-  try {
-    url = new URL(value2);
-  } catch {
-    throw new Error(`${name} must be an absolute URL`);
-  }
-  if (!["http:", "https:"].includes(url.protocol)) throw new Error(`${name} must use http or https`);
-  if (url.username || url.password) throw new Error(`${name} must not include URL credentials`);
-  url.pathname = url.pathname.replace(/\/+$/, "");
-  url.search = "";
-  url.hash = "";
-  return url.toString().replace(/\/$/, "");
 }
 function normalizeRoute(route) {
   const input = typeof route === "string" ? { path: route } : route;
@@ -514,9 +514,10 @@ async function readBounded(response, maxBytes) {
   return { body, bytes, truncated };
 }
 async function captureSnapshot(base, route, options) {
+  const normalizedBase = normalizeBase(base, "Base");
   const requested = new URL(
     route.path.replace(/^\/+/, ""),
-    `${base.replace(/\/+$/, "")}/`
+    `${normalizedBase}/`
   ).toString();
   const requestedOrigin = new URL(requested).origin;
   let current = requested;

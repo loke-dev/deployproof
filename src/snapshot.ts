@@ -1,5 +1,5 @@
 import type { CookieShape, Metadata, RedirectHop, RouteInput, Snapshot } from "./types.js";
-import { safeAbsoluteUrl, safePath } from "./url.js";
+import { normalizeBase, safeAbsoluteUrl, safePath } from "./url.js";
 
 const COMPARED_HEADERS = [
   "cache-control",
@@ -180,9 +180,10 @@ export async function captureSnapshot(
   route: RouteInput,
   options: { timeoutMs: number; maxRedirects: number; maxBodyBytes: number; ignoreHeaders: string[] },
 ): Promise<Snapshot> {
+  const normalizedBase = normalizeBase(base, "Base");
   const requested = new URL(
     route.path.replace(/^\/+/, ""),
-    `${base.replace(/\/+$/, "")}/`,
+    `${normalizedBase}/`,
   ).toString();
   const requestedOrigin = new URL(requested).origin;
   let current = requested;
